@@ -13,25 +13,18 @@ class Role(commands.Cog):
     async def role(self, ctx: commands.Context, member: discord.Member, role: discord.Role):
         
         if ctx.guild.me.top_role <= role:
-            return await ctx.send(f"System Error: The role {role.mention} is positioned above this bot's hierarchy.", ephemeral=True)
+            return await ctx.send("System Error: The role is positioned above this bot's hierarchy.", ephemeral=True)
 
         # --- CUSTOM EMOJIS ---
         crown_emoji = "<a:crown:1507002962558455848>"
         kick_emoji = "<a:kick:1507003085761937438>"
 
         try:
-            # Case A: Removing the role (Custom Burgundy Color & Kick Emoji)
+            # Case A: Removing the role
             if role in member.roles:
                 await member.remove_roles(role)
+                status_text = f"{kick_emoji} {member.mention} | Role Revoked: {role.mention} | Status: `Removed`"
                 
-                embed = discord.Embed(
-                    title=f"{kick_emoji} HIERARCHY UPDATE",
-                    color=discord.Color(0x800020) 
-                )
-                embed.add_field(name="Target User", value=member.mention, inline=True)
-                embed.add_field(name="Role Revoked", value=role.mention, inline=True)
-                embed.add_field(name="Status", value="```diff\n- Removed\n```", inline=False)
-
                 phrases = [
                     "Back to the bottom of the food chain.",
                     "Power revoked. The system remembers.",
@@ -39,18 +32,11 @@ class Role(commands.Cog):
                     "Access restricted. Hierarchy updated."
                 ]
 
-            # Case B: Adding the role (Pure Black Color & Crown Emoji)
+            # Case B: Adding the role
             else:
                 await member.add_roles(role)
+                status_text = f"{crown_emoji} {member.mention} | Role Granted: {role.mention} | Status: `Assigned`"
                 
-                embed = discord.Embed(
-                    title=f"{crown_emoji} HIERARCHY UPDATE",
-                    color=0x000000 
-                )
-                embed.add_field(name="Target User", value=member.mention, inline=True)
-                embed.add_field(name="Role Granted", value=role.mention, inline=True)
-                embed.add_field(name="Status", value="```diff\n+ Assigned\n```", inline=False)
-
                 phrases = [
                     "Don't let the new power go to your head.",
                     "A new rank achieved. Use it wisely.",
@@ -58,31 +44,24 @@ class Role(commands.Cog):
                     "The hierarchy welcomes your ascent."
                 ]
             
-            # Subtle Footer
-            embed.set_footer(
-                text=f"Authorized by: {ctx.author.display_name}", 
-                icon_url=ctx.author.display_avatar.url
-            )
-
-            phrase = random.choice(phrases)
-            await ctx.send(content=f"-# {phrase}", embed=embed)
+            # Send status text followed by the random small phrase
+            await ctx.send(f"{status_text}\n-# {random.choice(phrases)}")
 
         except discord.Forbidden:
             await ctx.send("System Error: Insufficient permissions to complete operations.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"System Error: {e}", ephemeral=True)
 
-    # Clean Error Logging
     @role.error
     async def role_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Access Denied: You must have the 'Manage Roles' permission to use this command.", ephemeral=True)
+            await ctx.send("Access Denied: You must have the 'Manage Roles' permission.", ephemeral=True)
         elif isinstance(error, commands.MemberNotFound):
-            await ctx.send("Target Error: Specified user could not be resolved.", ephemeral=True)
+            await ctx.send("Target Error: User could not be resolved.", ephemeral=True)
         elif isinstance(error, commands.RoleNotFound):
-            await ctx.send("Target Error: Specified role could not be resolved.", ephemeral=True)
+            await ctx.send("Target Error: Role could not be resolved.", ephemeral=True)
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Syntax Error: Required parameters missing. Format: `/role <user> <role>`", ephemeral=True)
+            await ctx.send("Syntax Error: Format: `/role <user> <role>`", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Role(bot))
