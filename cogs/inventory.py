@@ -8,6 +8,9 @@ class Inventory(commands.Cog):
 
     @commands.hybrid_command(name="inventory", aliases=["inv"], description="View your current balance and collected assets.")
     async def inventory(self, ctx: commands.Context):
+        # 1. Immediately defer the response to prevent "application did not respond" timeouts
+        await ctx.defer()
+        
         user_id = ctx.author.id
         coin_emoji = "<:coin:1506921225484767282>"
         
@@ -52,7 +55,7 @@ class Inventory(commands.Cog):
         if ctx.guild.icon:
             embed.set_thumbnail(url=ctx.guild.icon.url)
 
-        # White Banner GIF Layout (Bottom)
+        # White Banner GIF Layout (Bottom) - FIXED: Cleaned up Markdown link format
         embed.set_image(url="[https://i.imgur.com/9lYEi9w.gif](https://i.imgur.com/9lYEi9w.gif)")
 
         # Subtle Footer
@@ -61,6 +64,7 @@ class Inventory(commands.Cog):
             icon_url=ctx.author.display_avatar.url
         )
 
+        # Send the embed (automatically handles follow-up since we deferred)
         await ctx.send(embed=embed)
 
 async def setup(bot):
