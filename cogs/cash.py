@@ -17,7 +17,7 @@ class CashCommand(commands.Cog):
         
         coins = user_data.get("coins", 0)
         cash_emoji = "<a:cash:1506921225484767282>"
-        demoncat_emoji = "<:demoncat:1506995624879329490>"
+        demoncat_emoji = "<a:demoncat:1506995624879329490>"
         
         # Clean, direct text with the demoncat at the end of the sentence
         text = (
