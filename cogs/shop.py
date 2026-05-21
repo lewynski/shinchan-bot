@@ -22,14 +22,15 @@ class ShopView(discord.ui.View):
         collection = interaction.client.db["users"]
         user_data = await collection.find_one({"user_id": interaction.user.id}) or {}
         
-        coins = user_data.get("balance", 0)
+        # Check 'coins' field
+        coins = user_data.get("coins", 0)
         if coins < 5000:
-            return await interaction.response.send_message("❌ You do not have enough coins.", ephemeral=True)
+            return await interaction.response.send_message(f"❌ You do not have enough coins. You have {coins:,}.", ephemeral=True)
             
         pendant_until = time.time() + 86400 # 24 hours
         await collection.update_one(
             {"user_id": interaction.user.id},
-            {"$inc": {"balance": -5000}, "$set": {"pendant_until": pendant_until}},
+            {"$inc": {"coins": -5000}, "$set": {"pendant_until": pendant_until}},
             upsert=True
         )
         
@@ -42,18 +43,19 @@ class ShopView(discord.ui.View):
         collection = interaction.client.db["users"]
         user_data = await collection.find_one({"user_id": interaction.user.id}) or {}
         
-        coins = user_data.get("balance", 0)
+        # Check 'coins' field
+        coins = user_data.get("coins", 0)
         necklace_until = user_data.get("necklace_until", 0)
         
         if necklace_until > time.time():
             return await interaction.response.send_message("❌ You already have an active necklace!", ephemeral=True)
         if coins < 3000:
-            return await interaction.response.send_message("❌ You do not have enough coins.", ephemeral=True)
+            return await interaction.response.send_message(f"❌ You do not have enough coins. You have {coins:,}.", ephemeral=True)
             
         new_expiry = time.time() + 43200 # 12 hours
         await collection.update_one(
             {"user_id": interaction.user.id},
-            {"$inc": {"balance": -3000}, "$set": {"necklace_until": new_expiry}},
+            {"$inc": {"coins": -3000}, "$set": {"necklace_until": new_expiry}},
             upsert=True
         )
         
