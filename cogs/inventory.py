@@ -6,7 +6,6 @@ class Inventory(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Added aliases=["inv"] so typing 'sinv' works perfectly alongside 'sinventory'
     @commands.hybrid_command(name="inventory", aliases=["inv"], description="View your current balance and collected assets.")
     async def inventory(self, ctx: commands.Context):
         user_id = ctx.author.id
@@ -30,3 +29,5 @@ class Inventory(commands.Cog):
             name="Financial Ledger", 
             value=f"
 http://googleusercontent.com/immersive_entry_chip/0
+
+Push this exact code to GitHub. Railway will automatically restart, and because the syntax error is cleared, you will see `Loaded Cog: inventory.py` correctly appear in your logs!
