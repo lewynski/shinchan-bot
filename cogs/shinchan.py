@@ -1,14 +1,14 @@
 import discord
 from discord.ext import commands
 
-class Menu(commands.Cog):
+class Shinchan(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="menu", description="View all available commands.")
-    async def menu(self, ctx: commands.Context):
+    @commands.hybrid_command(name="shinchan", description="View all available commands.")
+    async def shinchan(self, ctx: commands.Context):
         
-        # Here we list your commands with the small text formatting below each one
+        # This list provides the user with clear instructions for each command
         text = (
             "**Available Commands**\n\n"
             
@@ -31,4 +31,4 @@ class Menu(commands.Cog):
         await ctx.send(content=text)
 
 async def setup(bot):
-    await bot.add_cog(Menu(bot))
+    await bot.add_cog(Shinchan(bot))
