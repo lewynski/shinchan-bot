@@ -3,6 +3,39 @@ import discord
 from discord.ext import commands
 from collections import Counter
 
+# --- INTERACTIVE PAGINATOR CLASS ---
+class InventoryPaginator(discord.ui.View):
+    def __init__(self, pages, author_id):
+        super().__init__(timeout=180) # Buttons will disable after 3 minutes to save memory
+        self.pages = pages
+        self.author_id = author_id
+        self.current_page = 0
+
+    # Ensures only the person who ran the command can click the buttons
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("This isn't your menu!", ephemeral=True)
+            return False
+        return True
+
+    def update_buttons(self):
+        # Disable "Prev" if on the first page, disable "Next" if on the last page
+        self.prev_button.disabled = self.current_page == 0
+        self.next_button.disabled = self.current_page == len(self.pages) - 1
+
+    @discord.ui.button(label="◀ Prev", style=discord.ButtonStyle.blurple, disabled=True)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.current_page -= 1
+        self.update_buttons()
+        await interaction.response.edit_message(embed=self.pages[self.current_page], view=self)
+
+    @discord.ui.button(label="Next ▶", style=discord.ButtonStyle.blurple)
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.current_page += 1
+        self.update_buttons()
+        await interaction.response.edit_message(embed=self.pages[self.current_page], view=self)
+
+# --- INVENTORY COG ---
 class Inventory(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -36,11 +69,10 @@ class Inventory(commands.Cog):
         level = user_data.get("level", 1)
         raw_items = user_data.get("items", [])
 
-        # --- ITEM REGISTRY (Clean Slate) ---
-        # Add your custom items here later!
+        # --- ITEM REGISTRY ---
         item_registry = {}
 
-        # --- INVENTORY FORMATTING (Compacted) ---
+        # --- INVENTORY FORMATTING ---
         inventory_lines = []
         if raw_items:
             item_counts = Counter(raw_items)
@@ -79,22 +111,34 @@ class Inventory(commands.Cog):
             health = random.randint(40, 80)
             stress = random.randint(50, 90)
 
-        # --- EMBED LAYOUT (Compacted) ---
-        embed = discord.Embed(
-            title="BitLife • Lifestyle Summary",
-            description=(
-                f"Profile overview for {target_user.mention}\n\n"
-                f"Age\n**{bitlife_age}**\n"
-                f"Status\n**{status}**\n"
-                f"Reputation\n**Stable**\n"
-                f"Career\n**Unemployed**"
-            ),
-            color=0x1A1A1A
+        # --- BUILD PAGES ---
+        pages = []
+        
+        # Helper function to generate a base embed template to avoid repetitive code
+        def create_base_embed(title_suffix, page_num):
+            embed = discord.Embed(
+                title=f"BitLife • {title_suffix}",
+                color=0x1A1A1A
+            )
+            embed.set_author(name=str(target_user), icon_url=target_user.display_avatar.url)
+            embed.set_thumbnail(url=target_user.display_avatar.url)
+            embed.set_footer(text=f"Citizen ID • {target_user.id}  |  Page {page_num}/4")
+            return embed
+
+        # PAGE 1: Profile
+        embed1 = create_base_embed("Personal Profile", 1)
+        embed1.description = (
+            f"Profile overview for {target_user.mention}\n\n"
+            f"Age\n**{bitlife_age}**\n"
+            f"Status\n**{status}**\n"
+            f"Reputation\n**Stable**\n"
+            f"Career\n**Unemployed**"
         )
+        pages.append(embed1)
 
-        embed.set_author(name=str(target_user), icon_url=target_user.display_avatar.url)
-
-        embed.add_field(
+        # PAGE 2: Finances
+        embed2 = create_base_embed("Financial Ledger", 2)
+        embed2.add_field(
             name=f"{cash_emoji} Finances",
             value=(
                 f"Cash Balance\n**{coins:,} Coins**\n"
@@ -103,15 +147,21 @@ class Inventory(commands.Cog):
             ),
             inline=False
         )
+        pages.append(embed2)
 
-        embed.add_field(
-            name=f"{rate_emoji} Assets & Properties",
+        # PAGE 3: Assets
+        embed3 = create_base_embed("Assets & Properties", 3)
+        embed3.add_field(
+            name=f"{rate_emoji} Inventory",
             value=inventory_text,
             inline=False
         )
+        pages.append(embed3)
 
-        embed.add_field(
-            name=f"{level_emoji} Life Status",
+        # PAGE 4: Life Status
+        embed4 = create_base_embed("Life Status", 4)
+        embed4.add_field(
+            name=f"{level_emoji} Vitals",
             value=(
                 f"Happiness\n**{happiness}%**\n"
                 f"Health\n**{health}%**\n"
@@ -120,11 +170,11 @@ class Inventory(commands.Cog):
             ),
             inline=False
         )
+        pages.append(embed4)
 
-        embed.set_thumbnail(url=target_user.display_avatar.url)
-        embed.set_footer(text=f"Citizen ID • {target_user.id}")
-
-        await ctx.send(embed=embed)
+        # --- SEND FIRST PAGE WITH BUTTONS ---
+        view = InventoryPaginator(pages, ctx.author.id)
+        await ctx.send(embed=pages[0], view=view)
 
 async def setup(bot):
     await bot.add_cog(Inventory(bot))
