@@ -34,51 +34,23 @@ class Inventory(commands.Cog):
         coins = user_data.get("coins", 0)
         gems = user_data.get("gems", 0)
         level = user_data.get("level", 1)
-        
-        # Assume items is a list in DB, e.g., ["Ring", "Chicken", "Chicken"]
         raw_items = user_data.get("items", [])
 
-        # --- ITEM REGISTRY (Match the screenshot layout) ---
-        # You can replace these default emojis with your custom Developer Portal emojis
-        item_registry = {
-            "Anting-anting": {
-                "emoji": "🧿", 
-                "desc": "Bonus: +500 Coins every 30 minutes in VC, valid for 1 day"
-            },
-            "Agimat": {
-                "emoji": "🏺", 
-                "desc": "Grants shield from robbery, valid for 1 day"
-            },
-            "Chicken": {
-                "emoji": "🐓", 
-                "desc": "Fighting chicken for `/cockfight`"
-            },
-            "Ring": {
-                "emoji": "💍", 
-                "desc": "Required for `/marry`, gives -10% tax reduction on `/give`"
-            }
-        }
+        # --- ITEM REGISTRY (Clean Slate) ---
+        # Add your custom items here later!
+        item_registry = {}
 
-        # --- INVENTORY FORMATTING ---
+        # --- INVENTORY FORMATTING (Compacted) ---
         inventory_lines = []
         if raw_items:
-            # Counter automatically groups duplicates (e.g., counts 2 Chickens)
             item_counts = Counter(raw_items)
-            
             for item_name, count in item_counts.items():
-                # Pull data from registry, or use a fallback if the item isn't listed
                 item_info = item_registry.get(item_name, {"emoji": "📦", "desc": "A mysterious item."})
-                
-                # The exact layout from your screenshot:
-                # Emoji **Name** - __Quantity__
-                # Description
                 header = f"{item_info['emoji']} **{item_name}** - __x{count} Owned__"
                 desc = item_info['desc']
-                
                 inventory_lines.append(f"{header}\n{desc}")
                 
-            # Join all formatted items with a double space for breathing room
-            inventory_text = "\n\n".join(inventory_lines[:10])
+            inventory_text = "\n".join(inventory_lines[:10])
         else:
             inventory_text = "No luxury assets or properties owned."
 
@@ -107,14 +79,14 @@ class Inventory(commands.Cog):
             health = random.randint(40, 80)
             stress = random.randint(50, 90)
 
-        # --- EMBED LAYOUT ---
+        # --- EMBED LAYOUT (Compacted) ---
         embed = discord.Embed(
             title="BitLife • Lifestyle Summary",
             description=(
                 f"Profile overview for {target_user.mention}\n\n"
-                f"Age\n**{bitlife_age}**\n\n"
-                f"Status\n**{status}**\n\n"
-                f"Reputation\n**Stable**\n\n"
+                f"Age\n**{bitlife_age}**\n"
+                f"Status\n**{status}**\n"
+                f"Reputation\n**Stable**\n"
                 f"Career\n**Unemployed**"
             ),
             color=0x1A1A1A
@@ -125,14 +97,13 @@ class Inventory(commands.Cog):
         embed.add_field(
             name=f"{cash_emoji} Finances",
             value=(
-                f"Cash Balance\n**{coins:,} Coins**\n\n"
-                f"Premium Currency\n**{gems:,} Gems**\n\n"
+                f"Cash Balance\n**{coins:,} Coins**\n"
+                f"Premium Currency\n**{gems:,} Gems**\n"
                 f"Lifestyle Level\n**Level {level}**"
             ),
             inline=False
         )
 
-        # The newly formatted Assets list goes here
         embed.add_field(
             name=f"{rate_emoji} Assets & Properties",
             value=inventory_text,
@@ -142,9 +113,9 @@ class Inventory(commands.Cog):
         embed.add_field(
             name=f"{level_emoji} Life Status",
             value=(
-                f"Happiness\n**{happiness}%**\n\n"
-                f"Health\n**{health}%**\n\n"
-                f"Stress\n**{stress}%**\n\n"
+                f"Happiness\n**{happiness}%**\n"
+                f"Health\n**{health}%**\n"
+                f"Stress\n**{stress}%**\n"
                 f"Discipline\n**Strong**"
             ),
             inline=False
