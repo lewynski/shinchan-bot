@@ -1,5 +1,6 @@
 import discord
 import random
+import time
 from discord.ext import commands, tasks
 
 class Voice(commands.Cog):
@@ -15,17 +16,16 @@ class Voice(commands.Cog):
     async def voice_tracker(self):
         for guild in self.bot.guilds:
             for member in guild.members:
-                # Check if member is in a voice channel and isn't a bot
                 if member.voice and member.voice.channel and not member.bot:
                     
-                    # Fetch user from DB
                     user_data = await self.bot.db.users.find_one({"user_id": member.id})
-                    items = user_data.get("items", []) if user_data else []
-                    has_necklace = "necklace" in items
+                    if not user_data: continue
+
+                    # Check if necklace is still active
+                    has_necklace = user_data.get("necklace_until", 0) > time.time()
                     
                     earnings = 6000 if has_necklace else 3000
                     
-                    # Update Balance
                     await self.bot.db.users.update_one(
                         {"user_id": member.id},
                         {"$inc": {"balance": earnings}},
@@ -39,7 +39,6 @@ class Voice(commands.Cog):
                         "Consistency pays off, citizen."
                     ]
 
-                    # The mention (ping) is included here as requested
                     await member.voice.channel.send(
                         f"{member.mention} | You earned {self.cash_emoji} **{earnings:,}**\n"
                         f"-# {random.choice(phrases)}"
