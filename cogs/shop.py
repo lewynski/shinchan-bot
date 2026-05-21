@@ -16,8 +16,7 @@ class ShopView(discord.ui.View):
             return False
         return True
 
-    # The button now has NO text label. It is literally just the pendant icon.
-    # Set to 'secondary' (gray) style so it looks like an item slot
+    # The button sits outside the embed, has NO text/price, ONLY the pendant icon
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji=discord.PartialEmoji.from_str(PENDANT_EMOJI))
     async def buy_pendant(self, interaction: discord.Interaction, button: discord.ui.Button):
         collection = interaction.client.db["daily_cooldowns"]
@@ -35,16 +34,16 @@ class ShopView(discord.ui.View):
             upsert=True
         )
         
-        # Disable the button and change the icon to a checkmark to show it was purchased
+        # Disable the button and change the icon to a checkmark
         button.disabled = True
         button.emoji = "✅" 
         
-        # Replace the shop text with the success message
+        # Remove the embed and replace it with a clean success message
         text = (
             f"✅ **Pendant Equipped!**\n"
             f"-# You are completely immune to robberies for 24 hours."
         )
-        await interaction.response.edit_message(content=text, view=self)
+        await interaction.response.edit_message(content=text, embed=None, view=self)
 
 class ShopCommand(commands.Cog):
     def __init__(self, bot):
@@ -53,16 +52,24 @@ class ShopCommand(commands.Cog):
     @commands.hybrid_command(name="shop", aliases=["sshop"], description="Browse the Black Market to buy exclusive items.")
     async def shop(self, ctx: commands.Context):
         
-        # Clean text layout instead of an Embed
-        text = (
-            "🛒 **City Black Market**\n"
-            "Buy exclusive perks to protect your wealth.\n\n"
-            f"{PENDANT_EMOJI} **Magic Pendant** - __5,000 Coins__\n"
-            "-# Grants total immunity from `/rob` attempts for 24 Hours."
+        # --- WHITE EMBED ---
+        embed = discord.Embed(
+            title="🛒 City Black Market",
+            description="Buy exclusive perks to protect your wealth.",
+            color=0xFFFFFF # This hex code makes the embed line pure white
+        )
+        
+        # Item description inside the embed
+        embed.add_field(
+            name=f"{PENDANT_EMOJI} Magic Pendant - __5,000 Coins__",
+            value="Grants total immunity from `/rob` attempts for **24 Hours**.",
+            inline=False
         )
 
         view = ShopView(ctx.author.id)
-        await ctx.send(content=text, view=view)
+        
+        # Sends the white embed, and attaches the button (view) directly below it
+        await ctx.send(embed=embed, view=view)
 
 async def setup(bot):
     await bot.add_cog(ShopCommand(bot))
