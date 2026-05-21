@@ -16,7 +16,6 @@ class Inventory(commands.Cog):
         user_id = ctx.author.id
         
         # --- CUSTOM ANIMATED EMOJIS ---
-        # The 'a' stands for animated!
         cash_emoji = "<a:cash:1506921225484767282>"
         diamonds_emoji = "<a:diamonds:1506953045722927114>"
         life_emoji = "<a:life:1506953524272168970>"
@@ -97,18 +96,13 @@ class Inventory(commands.Cog):
             icon_url=ctx.author.display_avatar.url
         )
 
-        # --- FINANCIALS ---
+        # --- FINANCIALS (Cleaned up layout) ---
         embed.add_field(
             name=f"{cash_emoji} Finances",
             value=(
-                f"{cash_emoji} Cash Balance\n"
-                f"┗ **{coins:,} Coins**\n\n"
-
-                f"{diamonds_emoji} Premium Currency\n"
-                f"┗ **{gems:,} Gems**\n\n"
-
-                f"{life_emoji} Lifestyle Level\n"
-                f"┗ **Level {level}**"
+                f"{cash_emoji} Cash Balance - **{coins:,} Coins**\n"
+                f"{diamonds_emoji} Premium Currency - **{gems:,} Gems**\n"
+                f"{life_emoji} Lifestyle Level - **Level {level}**"
             ),
             inline=False
         )
@@ -134,7 +128,8 @@ class Inventory(commands.Cog):
 
         # --- VISUALS ---
         embed.set_thumbnail(url=ctx.author.display_avatar.url)
-        embed.set_image(url="https://i.imgur.com/sHIxFaQ.gif")
+        # The GIF image line has been completely removed
+        
         embed.set_footer(text=f"Citizen ID • {ctx.author.id}")
 
         # --- SEND ---
