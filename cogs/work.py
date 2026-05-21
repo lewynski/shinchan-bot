@@ -77,11 +77,13 @@ class ResignView(discord.ui.View):
         button.style = discord.ButtonStyle.secondary
         await interaction.response.edit_message(view=self)
         
-        # Send a private confirmation that they quit
-        await interaction.followup.send(
-            "💼 You have officially resigned from your job. You must wait **5 Hours** before taking a new occupation.", 
-            ephemeral=True
+        # Send a private confirmation that they quit with the new small text cooldown
+        text = (
+            "💼 You have officially resigned from your job. You must wait **5 Hours** before taking a new occupation.\n"
+            f"-# You are exhausted. Your next shift is available <t:{int(resign_cooldown)}:R>."
         )
+        
+        await interaction.followup.send(text, ephemeral=True)
 
 class WorkCommand(commands.Cog):
     def __init__(self, bot):
