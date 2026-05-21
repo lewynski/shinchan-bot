@@ -8,27 +8,40 @@ class Shinchan(commands.Cog):
     @commands.hybrid_command(name="shinchan", description="View all available commands.")
     async def shinchan(self, ctx: commands.Context):
         
-        # This list provides the user with clear instructions for each command
-        text = (
-            "**Available Commands**\n\n"
-            
-            "**/cash**\n"
-            "-# Check your current wallet balance.\n\n"
-            
-            "**/coinflip <choice> <bet>**\n"
-            "-# Bet your coins on heads or tails.\n\n"
-            
-            "**/rob <user>**\n"
-            "-# Attempt to steal coins from another citizen.\n\n"
-            
-            "**/shop**\n"
-            "-# Browse the Black Market for exclusive perks.\n\n"
-            
-            "**/role <user> <role>**\n"
-            "-# Grant or revoke roles for server members (Staff only)."
+        # Creating a white-themed embed for a premium look
+        embed = discord.Embed(
+            title="Available Commands",
+            color=0xFFFFFF # Pure white accent
+        )
+        
+        # Adding commands with small text formatting
+        embed.add_field(
+            name="**/cash**",
+            value="-# Check your current wallet balance.",
+            inline=False
+        )
+        embed.add_field(
+            name="**/coinflip <choice> <bet>**",
+            value="-# Bet your coins on heads or tails.",
+            inline=False
+        )
+        embed.add_field(
+            name="**/rob <user>**",
+            value="-# Attempt to steal coins from another citizen.",
+            inline=False
+        )
+        embed.add_field(
+            name="**/shop**",
+            value="-# Browse the Black Market for exclusive perks.",
+            inline=False
+        )
+        embed.add_field(
+            name="**/role <user> <role>**",
+            value="-# Grant or revoke roles for server members (Staff only).",
+            inline=False
         )
             
-        await ctx.send(content=text)
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Shinchan(bot))
