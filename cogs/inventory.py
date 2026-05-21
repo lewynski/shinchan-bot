@@ -9,22 +9,18 @@ class Inventory(commands.Cog):
     @commands.hybrid_command(
         name="inventory",
         aliases=["inv"],
-        description="View your inventory and account assets."
+        description="View your lifestyle profile and assets."
     )
     async def inventory(self, ctx: commands.Context):
 
         user_id = ctx.author.id
-
-        # Custom Currency Emoji
         coin_emoji = "<:coin:1506921225484767282>"
 
-        # Database Collection
+        # DATABASE
         collection = self.bot.db["daily_cooldowns"]
-
-        # Fetch User Data
         user_data = await collection.find_one({"_id": user_id})
 
-        # Default Values
+        # DEFAULT VALUES
         if not user_data:
             user_data = {
                 "coins": 0,
@@ -33,81 +29,104 @@ class Inventory(commands.Cog):
                 "items": []
             }
 
+        # DATA
         coins = user_data.get("coins", 0)
         gems = user_data.get("gems", 0)
         level = user_data.get("level", 1)
         items = user_data.get("items", [])
 
-        # Inventory List
+        # NET WORTH RANK
+        if coins >= 1_000_000:
+            status = "Elite Millionaire"
+        elif coins >= 100_000:
+            status = "Luxury Citizen"
+        elif coins >= 10_000:
+            status = "Wealthy Resident"
+        else:
+            status = "Average Citizen"
+
+        # INVENTORY FORMAT
         if items:
             inventory_text = "\n".join(
-                f"• {item}" for item in items[:15]
+                f"• {item}" for item in items[:10]
             )
         else:
-            inventory_text = "No registered assets."
+            inventory_text = (
+                "No luxury assets or properties owned."
+            )
 
-        # Main Embed
+        # EMBED
         embed = discord.Embed(
-            title="Asset Management System",
+            title="BitLife • Lifestyle Summary",
             description=(
-                f"Official inventory overview for "
-                f"{ctx.author.mention}"
+                f"Profile overview for {ctx.author.mention}\n\n"
+                f"Age • `21`\n"
+                f"Status • `{status}`\n"
+                f"Reputation • `Stable`\n"
+                f"Career • `Unemployed`"
             ),
-            color=0xFFFFFF
+            color=0x1A1A1A
         )
 
-        # User Avatar
+        # PROFILE
         embed.set_author(
             name=str(ctx.author),
             icon_url=ctx.author.display_avatar.url
         )
 
-        # Financial Overview
+        # FINANCIALS
         embed.add_field(
-            name="Financial Overview",
+            name="💰 Finances",
             value=(
-                f"{coin_emoji} Currency Balance: "
-                f"**{coins:,} Coins**\n"
-                f"💎 Premium Assets: "
-                f"**{gems:,} Gems**"
+                f"{coin_emoji} Cash Balance\n"
+                f"┗ **{coins:,} Coins**\n\n"
+
+                f"💎 Premium Currency\n"
+                f"┗ **{gems:,} Gems**\n\n"
+
+                f"📈 Lifestyle Level\n"
+                f"┗ **Level {level}**"
             ),
             inline=False
         )
 
-        # Account Information
+        # ASSETS
         embed.add_field(
-            name="Account Information",
-            value=(
-                f"Account Level: **{level}**\n"
-                f"Registered Assets: **{len(items)}**"
-            ),
-            inline=False
-        )
-
-        # Inventory Assets
-        embed.add_field(
-            name="Registered Inventory",
+            name="🏡 Assets & Properties",
             value=inventory_text,
             inline=False
         )
 
-        # Server Icon
-        if ctx.guild and ctx.guild.icon:
-            embed.set_thumbnail(
-                url=ctx.guild.icon.url
-            )
+        # LIFE STATUS
+        embed.add_field(
+            name="📊 Life Status",
+            value=(
+                "Happiness • `76%`\n"
+                "Health • `89%`\n"
+                "Stress • `12%`\n"
+                "Discipline • `Strong`"
+            ),
+            inline=False
+        )
 
-        # Banner Image
+        # THUMBNAIL
+        embed.set_thumbnail(
+            url=ctx.author.display_avatar.url
+        )
+
+        # IMAGE
         embed.set_image(
             url="https://i.imgur.com/sHIxFaQ.gif"
         )
 
-        # Footer
+        # FOOTER
         embed.set_footer(
-            text=f"Secure Account ID: {ctx.author.id}"
+            text=(
+                f"Citizen ID • {ctx.author.id}"
+            )
         )
 
-        # Send
+        # SEND
         await ctx.send(embed=embed)
 
 
