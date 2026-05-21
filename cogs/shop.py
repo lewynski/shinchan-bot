@@ -20,30 +20,46 @@ class ShopView(discord.ui.View):
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji=discord.PartialEmoji.from_str(PENDANT_EMOJI))
     async def buy_pendant(self, interaction: discord.Interaction, button: discord.ui.Button):
         collection = interaction.client.db["users"]
-        user_data = await collection.find_one({"_id": interaction.user.id}) or {}
+        u_id = int(interaction.user.id)
+        user_data = await collection.find_one({"_id": u_id}) or {}
+        
         coins = user_data.get("coins", 0)
         if coins < 5000:
-            return await interaction.response.send_message(f"❌ You have {coins:,} coins. Need 5,000.", ephemeral=True)
+            return await interaction.response.send_message(f"❌ You only have {coins:,} coins. Need 5,000.", ephemeral=True)
             
-        await collection.update_one({"_id": interaction.user.id}, {"$inc": {"coins": -5000}, "$set": {"pendant_until": time.time() + 86400}}, upsert=True)
+        await collection.update_one(
+            {"_id": u_id}, 
+            {"$inc": {"coins": -5000}, "$set": {"pendant_until": time.time() + 86400}}, 
+            upsert=True
+        )
+        
         button.disabled = True
         button.emoji = "✅" 
-        await interaction.response.edit_message(content="✅ **Pendant Equipped!**", embed=None, view=self)
+        await interaction.response.edit_message(content="✅ **Pendant Equipped!** -# Immune to robberies for 24 hours.", embed=None, view=self)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji=discord.PartialEmoji.from_str(NECKLACE_EMOJI))
     async def buy_necklace(self, interaction: discord.Interaction, button: discord.ui.Button):
         collection = interaction.client.db["users"]
-        user_data = await collection.find_one({"_id": interaction.user.id}) or {}
+        u_id = int(interaction.user.id)
+        user_data = await collection.find_one({"_id": u_id}) or {}
+        
         coins = user_data.get("coins", 0)
-        if user_data.get("necklace_until", 0) > time.time():
-            return await interaction.response.send_message("❌ Already active!", ephemeral=True)
+        necklace_until = user_data.get("necklace_until", 0)
+        
+        if necklace_until > time.time():
+            return await interaction.response.send_message("❌ You already have an active necklace!", ephemeral=True)
         if coins < 3000:
-            return await interaction.response.send_message(f"❌ You have {coins:,} coins. Need 3,000.", ephemeral=True)
+            return await interaction.response.send_message(f"❌ You only have {coins:,} coins. Need 3,000.", ephemeral=True)
             
-        await collection.update_one({"_id": interaction.user.id}, {"$inc": {"coins": -3000}, "$set": {"necklace_until": time.time() + 43200}}, upsert=True)
+        await collection.update_one(
+            {"_id": u_id}, 
+            {"$inc": {"coins": -3000}, "$set": {"necklace_until": time.time() + 43200}}, 
+            upsert=True
+        )
+        
         button.disabled = True
         button.emoji = "✅"
-        await interaction.response.edit_message(content="✅ **Necklace Purchased!**", embed=None, view=self)
+        await interaction.response.edit_message(content="✅ **Necklace Purchased!** -# Enjoy double voice earnings for 12 hours.", embed=None, view=self)
 
 class ShopCommand(commands.Cog):
     def __init__(self, bot):
@@ -69,6 +85,5 @@ class ShopCommand(commands.Cog):
         view = ShopView(ctx.author.id)
         await ctx.send(embed=embed, view=view)
 
-# This setup function must be at the very bottom of the file
 async def setup(bot):
     await bot.add_cog(ShopCommand(bot))
