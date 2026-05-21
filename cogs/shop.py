@@ -2,6 +2,7 @@ import time
 import discord
 from discord.ext import commands
 
+# --- CUSTOM EMOJIS ---
 PENDANT_EMOJI = "<:pendant:1506988725794771026>"
 NECKLACE_EMOJI = "<:necklace:1507010305149108224>"
 
@@ -44,5 +45,30 @@ class ShopView(discord.ui.View):
         button.emoji = "✅"
         await interaction.response.edit_message(content="✅ **Necklace Purchased!**", embed=None, view=self)
 
+class ShopCommand(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.hybrid_command(name="shop", description="Browse the Black Market to buy exclusive items.")
+    async def shop(self, ctx: commands.Context):
+        embed = discord.Embed(
+            title="🛒 City Black Market",
+            description="Buy exclusive perks to enhance your wealth.",
+            color=0xFFFFFF
+        )
+        embed.add_field(
+            name=f"{PENDANT_EMOJI} Magic Pendant - __5,000 Coins__",
+            value="Grants total immunity from `/rob` attempts for **24 Hours**.",
+            inline=False
+        )
+        embed.add_field(
+            name=f"{NECKLACE_EMOJI} Voice Necklace - __3,000 Coins__",
+            value="Boosts earnings in voice channels to **6,000 per 15 mins** for **12 Hours**.",
+            inline=False
+        )
+        view = ShopView(ctx.author.id)
+        await ctx.send(embed=embed, view=view)
+
+# This setup function must be at the very bottom of the file
 async def setup(bot):
-    await bot.add_cog(ShopCommand(bot)) # Add the command class similarly to previous examples
+    await bot.add_cog(ShopCommand(bot))
