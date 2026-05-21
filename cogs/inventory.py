@@ -15,12 +15,13 @@ class Inventory(commands.Cog):
 
         user_id = ctx.author.id
         
-        # --- CUSTOM EMOJIS ---
-        cash_emoji = "<:cash:1506921225484767282>"
-        diamonds_emoji = "<:diamonds:1506953045722927114>"
-        life_emoji = "<:life:1506953524272168970>"
-        rate_emoji = "<:rate:1506950189800357948>"
-        level_emoji = "<:level:1506953310807130152>"
+        # --- CUSTOM ANIMATED EMOJIS ---
+        # The 'a' stands for animated!
+        cash_emoji = "<a:cash:1506921225484767282>"
+        diamonds_emoji = "<a:diamonds:1506953045722927114>"
+        life_emoji = "<a:life:1506953524272168970>"
+        rate_emoji = "<a:rate:1506950189800357948>"
+        level_emoji = "<a:level:1506953310807130152>"
 
         # --- DATABASE ---
         collection = self.bot.db["daily_cooldowns"]
@@ -42,7 +43,6 @@ class Inventory(commands.Cog):
         items = user_data.get("items", [])
 
         # --- DYNAMIC AGE ---
-        # Calculates how many years the account has existed and adds 18 (so they start as an adult)
         discord_age_years = (discord.utils.utcnow() - ctx.author.created_at).days // 365
         bitlife_age = 18 + discord_age_years
 
