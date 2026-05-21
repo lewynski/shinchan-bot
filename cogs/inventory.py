@@ -55,7 +55,7 @@ class Inventory(commands.Cog):
         if ctx.guild.icon:
             embed.set_thumbnail(url=ctx.guild.icon.url)
 
-        # White Banner GIF Layout (Bottom) - FIXED: Cleaned up Markdown link format
+        # White Banner GIF Layout (Bottom) - FIXED: Removed Markdown brackets to make URL clean
         embed.set_image(url="[https://i.imgur.com/9lYEi9w.gif](https://i.imgur.com/9lYEi9w.gif)")
 
         # Subtle Footer
