@@ -10,17 +10,26 @@ class CoinflipCommand(commands.Cog):
     @commands.hybrid_command(
         name="coinflip", 
         aliases=["cf", "flip"], 
-        description="Bet your coins on a 50/50 coin flip."
+        description="Bet your coins on heads or tails."
     )
-    async def coinflip(self, ctx: commands.Context, bet: int):
-        # Define the cash emoji right away so we can use it in our error messages
+    # Added 'choice' parameter so users must pick heads or tails
+    async def coinflip(self, ctx: commands.Context, choice: str, bet: int):
         cash_emoji = "<a:cash:1506921225484767282>"
         
-        # 1. Invalid bet check
+        # 1. Choice validation
+        choice = choice.lower()
+        if choice not in ["heads", "tails", "h", "t"]:
+            return await ctx.send("You must choose either `heads` or `tails`. Example: `/cf heads 500`")
+            
+        # Normalize h/t to heads/tails
+        if choice == "h": choice = "heads"
+        if choice == "t": choice = "tails"
+        
+        # 2. Invalid bet check
         if bet <= 0:
             return await ctx.send("You must bet a valid amount of coins.")
             
-        # 2. Maximum bet limit check
+        # 3. Maximum bet limit check
         if bet > 100000:
             return await ctx.send(f"The high rollers table is full. The maximum bet is {cash_emoji} **100,000**.")
 
@@ -29,7 +38,7 @@ class CoinflipCommand(commands.Cog):
         
         coins = user_data.get("coins", 0)
         
-        # 3. Insufficient funds check (Removed the X emoji)
+        # 4. Insufficient funds check
         if coins < bet:
             return await ctx.send(f"You don't have enough to bet that much. You only have {cash_emoji} **{coins:,}**.")
 
@@ -38,23 +47,22 @@ class CoinflipCommand(commands.Cog):
         winner_emoji = "<a:winner:1506997895491223592>"
         defeat_emoji = "<a:defeat:1506997897059631114>"
 
-        # Send the suspenseful flipping message
-        flip_msg = await ctx.send(f"{coinflip_emoji} Tossing the coin for {cash_emoji} **{bet:,}**...")
+        # Send the suspenseful flipping message with their choice included
+        flip_msg = await ctx.send(f"{coinflip_emoji} Tossing the coin... You bet {cash_emoji} **{bet:,}** on **{choice.capitalize()}**.")
 
         # Wait 2 seconds for dramatic effect
         await asyncio.sleep(2)
 
-        # Calculate 50/50 Outcome
-        outcome = random.choice(["win", "lose"])
+        # Calculate Outcome (The actual coin flip)
+        landed = random.choice(["heads", "tails"])
 
-        if outcome == "win":
+        if choice == landed:
             # Add the bet amount to their balance
             await collection.update_one(
                 {"_id": ctx.author.id},
                 {"$inc": {"coins": bet}}
             )
             
-            # Random victory phrases
             phrases = [
                 "The coin lands perfectly in your favor.",
                 "Beginner's luck, or pure skill?",
@@ -64,7 +72,7 @@ class CoinflipCommand(commands.Cog):
             
             text = (
                 f"{winner_emoji} **You Won!**\n"
-                f"The coin landed in your favor. You doubled your money and won {cash_emoji} **{bet:,}**!\n"
+                f"It landed on **{landed.capitalize()}**! You doubled your money and won {cash_emoji} **{bet:,}**!\n"
                 f"-# {random.choice(phrases)}"
             )
             
@@ -75,7 +83,6 @@ class CoinflipCommand(commands.Cog):
                 {"$inc": {"coins": -bet}}
             )
             
-            # Random defeat phrases
             phrases = [
                 "The house always wins... eventually.",
                 "Better luck next time, gambler.",
@@ -85,7 +92,7 @@ class CoinflipCommand(commands.Cog):
             
             text = (
                 f"{defeat_emoji} **You Lost!**\n"
-                f"The coin betrayed you. You lost {cash_emoji} **{bet:,}**...\n"
+                f"It landed on **{landed.capitalize()}**... You lost {cash_emoji} **{bet:,}**.\n"
                 f"-# {random.choice(phrases)}"
             )
 
