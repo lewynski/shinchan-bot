@@ -64,7 +64,7 @@ async def on_ready():
     print(f'Active in {len(bot.guilds)} servers.')
     
     # Set Shinchan's rich presence status
-    await bot.change_presence(activity=discord.Game(name="Domain Expansion"))
+    await bot.change_presence(activity=discord.Game(name="/shinchan 666"))
 
 # 6. Run the script using the environment token
 if __name__ == '__main__':
