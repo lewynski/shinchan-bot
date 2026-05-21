@@ -7,9 +7,12 @@ class CashCommand(commands.Cog):
 
     @commands.hybrid_command(name="cash", aliases=["bal", "balance", "scash"], description="Check your cash balance.")
     async def cash(self, ctx: commands.Context):
+        # Ensure you are using the correct collection name from your DB
         collection = self.bot.db["users"]
-        # Use _id to match your MongoDB structure
-        user_data = await collection.find_one({"_id": ctx.author.id}) or {}
+        
+        # Explicitly convert to int to match the MongoDB _id type
+        user_id = int(ctx.author.id)
+        user_data = await collection.find_one({"_id": user_id}) or {}
         
         coins = user_data.get("coins", 0)
         cash_emoji = "<a:cash:1506921225484767282>"
@@ -19,6 +22,7 @@ class CashCommand(commands.Cog):
             f"{demoncat_emoji} You currently have {cash_emoji} **{coins:,}** cash.\n"
             f"-# Watch your pockets. The streets aren't always safe."
         )
+            
         await ctx.send(content=text)
 
 async def setup(bot):
