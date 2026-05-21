@@ -43,6 +43,46 @@ class JobSelectView(discord.ui.View):
         super().__init__(timeout=60)
         self.add_item(JobSelect())
 
+# --- RESIGN BUTTON VIEW ---
+class ResignView(discord.ui.View):
+    def __init__(self, author_id):
+        super().__init__(timeout=120)
+        self.author_id = author_id
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("You can only resign from your own job!", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="Resign", style=discord.ButtonStyle.danger)
+    async def resign_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        collection = interaction.client.db["daily_cooldowns"]
+        now = time.time()
+        
+        # 5 Hour Cooldown Penalty
+        resign_cooldown = now + (5 * 3600)
+        
+        # Unset removes the job and shifts completely from the user's database profile
+        await collection.update_one(
+            {"_id": interaction.user.id},
+            {
+                "$unset": {"job": "", "shifts": ""},
+                "$set": {"resign_cooldown": resign_cooldown}
+            }
+        )
+        
+        button.disabled = True
+        button.label = "Resigned"
+        button.style = discord.ButtonStyle.secondary
+        await interaction.response.edit_message(view=self)
+        
+        # Send a private confirmation that they quit
+        await interaction.followup.send(
+            "💼 You have officially resigned from your job. You must wait **5 Hours** before taking a new occupation.", 
+            ephemeral=True
+        )
+
 class WorkCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -58,19 +98,30 @@ class WorkCommand(commands.Cog):
         user_data = await collection.find_one({"_id": ctx.author.id}) or {}
         now = time.time()
         
+        # 1. Jail Check
         jail_until = user_data.get("jail_until", 0)
         if now < jail_until:
             return await ctx.send(f"🚔 **You are in JAIL!** You cannot work until <t:{int(jail_until)}:R>.")
-            
-        work_cd = user_data.get("work_cooldown", 0)
-        if now < work_cd:
-            return await ctx.send(f"⏳ You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.")
 
         job_key = user_data.get("job")
+
+        # 2. Work Cooldown Check
+        work_cd = user_data.get("work_cooldown", 0)
+        if now < work_cd:
+            # If they are on cooldown but have a job, attach the Resign button so they can still quit
+            view = ResignView(ctx.author.id) if job_key else None
+            return await ctx.send(f"⏳ You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.", view=view)
+
+        # 3. Unemployed & Resign Cooldown Check
         if not job_key or job_key not in JOBS:
+            resign_cd = user_data.get("resign_cooldown", 0)
+            if now < resign_cd:
+                return await ctx.send(f"⏳ You recently resigned from your job. You can apply for a new occupation <t:{int(resign_cd)}:R>.")
+                
             text = "🏢 **City Employment Agency**\nYou are currently unemployed. Select a career path from the menu below to start earning."
             return await ctx.send(content=text, view=JobSelectView())
 
+        # 4. Work Shift & Salary Payout
         shifts = user_data.get("shifts", 0) + 1
         stage_idx, salary = self.get_stage_and_salary(shifts)
         job_info = JOBS[job_key]
@@ -83,16 +134,15 @@ class WorkCommand(commands.Cog):
             upsert=True
         )
 
-        # Your custom animated emoji
         cash_emoji = "<a:cash:1506921225484767282>"
-        
-        # Format the text with the emoji and small text markdown (-#)
         text = (
             f"{job_info['emoji']} You earned {cash_emoji} **{salary:,}** for your hardwork.\n"
             f"-# Great job, {job_title}!"
         )
         
-        await ctx.send(content=text)
+        # Attach the Resign button to the successful work payout
+        view = ResignView(ctx.author.id)
+        await ctx.send(content=text, view=view)
 
 async def setup(bot):
     await bot.add_cog(WorkCommand(bot))
