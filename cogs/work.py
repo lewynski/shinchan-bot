@@ -77,10 +77,10 @@ class ResignView(discord.ui.View):
         button.style = discord.ButtonStyle.secondary
         await interaction.response.edit_message(view=self)
         
-        # Send a private confirmation that they quit with the small text cooldown
+        # Send a private confirmation that they quit
         text = (
             "💼 You have officially resigned from your job. You must wait **5 Hours** before taking a new occupation.\n"
-            f"-# You are exhausted. Your next shift is available <t:{int(resign_cooldown)}:R>."
+            f"-# Your next shift will be available <t:{int(resign_cooldown)}:R>."
         )
         
         await interaction.followup.send(text, ephemeral=True)
@@ -107,12 +107,18 @@ class WorkCommand(commands.Cog):
 
         job_key = user_data.get("job")
 
-        # 2. Work Cooldown Check
+        # 2. Work Cooldown Check & Warning
         work_cd = user_data.get("work_cooldown", 0)
         if now < work_cd:
-            # If they are on cooldown but have a job, attach the Resign button so they can still quit
-            view = ResignView(ctx.author.id) if job_key else None
-            return await ctx.send(f"⏳ You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.", view=view)
+            if job_key:
+                view = ResignView(ctx.author.id)
+                text = (
+                    f"⏳ You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.\n"
+                    f"-# ⚠️ Warning: Resigning will incur a 5-hour cooldown before you can work again."
+                )
+                return await ctx.send(content=text, view=view)
+            else:
+                return await ctx.send(f"⏳ You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.")
 
         # 3. Unemployed & Resign Cooldown Check
         if not job_key or job_key not in JOBS:
@@ -142,7 +148,6 @@ class WorkCommand(commands.Cog):
             f"-# Great job, {job_title}!"
         )
         
-        # Clean text response only. No Resign button here anymore!
         await ctx.send(content=text)
 
 async def setup(bot):
