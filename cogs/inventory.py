@@ -8,7 +8,7 @@ class Inventory(commands.Cog):
 
     @commands.hybrid_command(name="inventory", aliases=["inv"], description="View your current balance and collected assets.")
     async def inventory(self, ctx: commands.Context):
-        # 1. Immediately defer the response to prevent "application did not respond" timeouts
+        # 1. Acknowledge the command instantly to stop the 3-second countdown
         await ctx.defer()
         
         user_id = ctx.author.id
@@ -27,7 +27,6 @@ class Inventory(commands.Cog):
             color=0xFFFFFF
         )
 
-        # We isolate the formatting backticks to prevent any editor parser glitches
         format_wrap = "```"
         ledger_text = f"{format_wrap}🏦 Liquid Balance: {total_coins:,} Credits{format_wrap}"
         currency_text = f"{coin_emoji} **Main Currency:** {total_coins:,} coins"
@@ -55,8 +54,8 @@ class Inventory(commands.Cog):
         if ctx.guild.icon:
             embed.set_thumbnail(url=ctx.guild.icon.url)
 
-        # White Banner GIF Layout (Bottom) - FIXED: Removed Markdown brackets to make URL clean
-        embed.set_image(url="[https://i.imgur.com/9lYEi9w.gif](https://i.imgur.com/9lYEi9w.gif)")
+        # Updated with your new white layout banner GIF
+        embed.set_image(url="[https://i.imgur.com/sHIxFaQ.gif](https://i.imgur.com/sHIxFaQ.gif)")
 
         # Subtle Footer
         embed.set_footer(
@@ -64,8 +63,8 @@ class Inventory(commands.Cog):
             icon_url=ctx.author.display_avatar.url
         )
 
-        # Send the embed (automatically handles follow-up since we deferred)
-        await ctx.send(embed=embed)
+        # 2. CORE FIX: Send via the interaction followup channel to clear the "thinking" status
+        await ctx.interaction.followup.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Inventory(bot))
