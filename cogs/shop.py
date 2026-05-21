@@ -3,7 +3,6 @@ import discord
 from discord.ext import commands
 
 # --- CUSTOM EMOJI ---
-# Static emoji format (no 'a:')
 PENDANT_EMOJI = "<:pendant:1506988725794771026>"
 
 class ShopView(discord.ui.View):
@@ -17,8 +16,9 @@ class ShopView(discord.ui.View):
             return False
         return True
 
-    # The button now uses your custom icon and just shows the price to look like an item tag
-    @discord.ui.button(label=" 5,000 Coins", style=discord.ButtonStyle.green, emoji=discord.PartialEmoji.from_str(PENDANT_EMOJI))
+    # The button now has NO text label. It is literally just the pendant icon.
+    # Set to 'secondary' (gray) style so it looks like an item slot
+    @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji=discord.PartialEmoji.from_str(PENDANT_EMOJI))
     async def buy_pendant(self, interaction: discord.Interaction, button: discord.ui.Button):
         collection = interaction.client.db["daily_cooldowns"]
         user_data = await collection.find_one({"_id": interaction.user.id}) or {}
@@ -35,11 +35,16 @@ class ShopView(discord.ui.View):
             upsert=True
         )
         
-        # Change the button appearance after buying
+        # Disable the button and change the icon to a checkmark to show it was purchased
         button.disabled = True
-        button.label = " Equipped"
-        button.style = discord.ButtonStyle.secondary
-        await interaction.response.edit_message(content=f"✅ **Pendant Equipped!** You are completely immune to robberies for 24 hours.", view=self)
+        button.emoji = "✅" 
+        
+        # Replace the shop text with the success message
+        text = (
+            f"✅ **Pendant Equipped!**\n"
+            f"-# You are completely immune to robberies for 24 hours."
+        )
+        await interaction.response.edit_message(content=text, view=self)
 
 class ShopCommand(commands.Cog):
     def __init__(self, bot):
@@ -47,21 +52,17 @@ class ShopCommand(commands.Cog):
 
     @commands.hybrid_command(name="shop", aliases=["sshop"], description="Browse the Black Market to buy exclusive items.")
     async def shop(self, ctx: commands.Context):
-        embed = discord.Embed(
-            title="🛒 City Black Market",
-            description="Buy exclusive perks to protect your wealth.",
-            color=0x1A1A1A
-        )
         
-        # Updated the embed to use your custom pendant icon
-        embed.add_field(
-            name=f"{PENDANT_EMOJI} Magic Pendant - __5,000 Coins__",
-            value="Grants total immunity from `/rob` attempts for **24 Hours**.",
-            inline=False
+        # Clean text layout instead of an Embed
+        text = (
+            "🛒 **City Black Market**\n"
+            "Buy exclusive perks to protect your wealth.\n\n"
+            f"{PENDANT_EMOJI} **Magic Pendant** - __5,000 Coins__\n"
+            "-# Grants total immunity from `/rob` attempts for 24 Hours."
         )
 
         view = ShopView(ctx.author.id)
-        await ctx.send(embed=embed, view=view)
+        await ctx.send(content=text, view=view)
 
 async def setup(bot):
     await bot.add_cog(ShopCommand(bot))
