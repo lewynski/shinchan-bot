@@ -1,10 +1,20 @@
+import random
 import time
+
 import discord
 from discord.ext import commands
 
 # --- CUSTOM EMOJIS ---
 PENDANT_EMOJI = "<:pendant:1506988725794771026>"
 NECKLACE_EMOJI = "<:necklace:1507010305149108224>"
+
+PENDANT_PHRASES = [
+    "The pendant hums quietly against your chest.",
+    "For now, the alleys look the other way.",
+    "A little protection goes a long way in this city.",
+    "Your pockets feel harder to reach tonight.",
+    "The black market sends its regards.",
+]
 
 
 class ShopView(discord.ui.View):
@@ -38,13 +48,15 @@ class ShopView(discord.ui.View):
         style=discord.ButtonStyle.secondary,
         emoji=discord.PartialEmoji.from_str(PENDANT_EMOJI),
     )
-    async def buy_pendant(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def buy_pendant(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         collection, user_id, user_data = await self.get_user_data(interaction)
 
         coins = user_data.get("coins", 0)
         if coins < 5000:
             return await interaction.response.send_message(
-                f"❌ You only have {coins:,} coins. Need 5,000.", ephemeral=True
+                f"You only have {coins:,} coins. Need 5,000.", ephemeral=True
             )
 
         await collection.update_one(
@@ -53,10 +65,11 @@ class ShopView(discord.ui.View):
             upsert=True,
         )
 
+        phrase = random.choice(PENDANT_PHRASES)
         button.disabled = True
-        button.emoji = "✅"
+
         await interaction.response.edit_message(
-            content="✅ **Pendant Equipped!** -# Immune to robberies for 24 hours.",
+            content=f"**Pendant Equipped!**\n-# {phrase}",
             embed=None,
             view=self,
         )
@@ -66,7 +79,9 @@ class ShopView(discord.ui.View):
         style=discord.ButtonStyle.secondary,
         emoji=discord.PartialEmoji.from_str(NECKLACE_EMOJI),
     )
-    async def buy_necklace(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def buy_necklace(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         collection, user_id, user_data = await self.get_user_data(interaction)
 
         coins = user_data.get("coins", 0)
@@ -74,23 +89,25 @@ class ShopView(discord.ui.View):
 
         if necklace_until > time.time():
             return await interaction.response.send_message(
-                "❌ You already have an active necklace!", ephemeral=True
+                "You already have an active necklace!", ephemeral=True
             )
         if coins < 3000:
             return await interaction.response.send_message(
-                f"❌ You only have {coins:,} coins. Need 3,000.", ephemeral=True
+                f"You only have {coins:,} coins. Need 3,000.", ephemeral=True
             )
 
         await collection.update_one(
             {"_id": user_data.get("_id", user_id)},
-            {"$inc": {"coins": -3000}, "$set": {"necklace_until": time.time() + 43200}},
+            {
+                "$inc": {"coins": -3000},
+                "$set": {"necklace_until": time.time() + 43200},
+            },
             upsert=True,
         )
 
         button.disabled = True
-        button.emoji = "✅"
         await interaction.response.edit_message(
-            content="✅ **Necklace Purchased!** -# Enjoy double voice earnings for 12 hours.",
+            content="**Necklace Purchased!**\n-# Enjoy double voice earnings for 12 hours.",
             embed=None,
             view=self,
         )
@@ -100,10 +117,12 @@ class ShopCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="shop", description="Browse the Black Market to buy exclusive items.")
+    @commands.hybrid_command(
+        name="shop", description="Browse the Black Market to buy exclusive items."
+    )
     async def shop(self, ctx: commands.Context):
         embed = discord.Embed(
-            title="🛒 City Black Market",
+            title="City Black Market",
             description="Buy exclusive perks to enhance your wealth.",
             color=0xFFFFFF,
         )
