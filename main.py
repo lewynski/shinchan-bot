@@ -4,16 +4,13 @@ from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
-# 1. Securely load secrets from the .env file (or cloud host variables)
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 MONGO_URI = os.getenv('MONGO_URI')
 
-# 2. Configure Discord Intents so Shinchan can read messages
 intents = discord.Intents.default()
 intents.message_content = True
 
-# 3. Create the Bot Class
 class ShinchanBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='!', intents=intents)
@@ -21,85 +18,35 @@ class ShinchanBot(commands.Bot):
         self.db = None
 
     async def setup_hook(self):
-        # This runs exactly once when the bot starts up. 
-        # It's the safest place to initialize your database connection.
+        # 1. Initialize MongoDB
         print("Connecting to MongoDB...")
         self.db_client = AsyncIOMotorClient(MONGO_URI)
-        
-        # 'shinchan_db' is the name of your database in MongoDB
         self.db = self.db_client['shinchan_db']
         
-        # Test the connection by pinging the database
         try:
             await self.db_client.admin.command('ping')
             print("Successfully connected to MongoDB!")
         except Exception as e:
             print(f"Failed to connect to MongoDB: {e}")
 
+        # 2. Load Cogs
+        for filename in os.listdir('./cogs'):
+            if filename.endswith('.py') and filename != '__init__.py':
+                # This loads the files without the '.py' extension (e.g., 'cogs.ping')
+                await self.load_extension(f'cogs.{filename[:-3]}')
+                print(f"Loaded Cog: {filename}")
+
     async def close(self):
-        # This ensures the database connection closes cleanly if the bot shuts down
         if self.db_client:
             self.db_client.close()
         await super().close()
 
-# 4. Initialize the bot
 bot = ShinchanBot()
 
-# 5. Core Events
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}!')
-    print(f'Currently serving {len(bot.guilds)} servers.')
-    
-    # Set a custom playing status
     await bot.change_presence(activity=discord.Game(name="Domain Expansion"))
 
-# 6. Commands
-@bot.command()
-async def ping(ctx):
-    """A simple test command."""
-    await ctx.send('Pong!')
-
-@bot.command()
-async def domain(ctx):
-    """A fun Jujutsu Kaisen command."""
-    await ctx.send("🤞 **Domain Expansion: Infinite Void!**")
-
-@bot.command()
-async def gear5(ctx):
-    """A fun One Piece command."""
-    await ctx.send("🥁 *Drums of Liberation playing...* **Gear 5!**")
-
-@bot.command()
-async def dedication(ctx):
-    """A personal easter egg."""
-    await ctx.send("Building this bot was inspired by Kyle! ✨")
-
-@bot.command()
-async def register(ctx):
-    """Saves a user's ID and server ID to the MongoDB database."""
-    # 'users' is the specific collection inside the 'shinchan_db' database
-    users_collection = bot.db['users']
-    
-    user_data = {
-        "_id": ctx.author.id,
-        "username": ctx.author.name,
-        "guild_id": ctx.guild.id,
-        "joined_at": str(ctx.author.joined_at)
-    }
-    
-    try:
-        # upsert=True means it will update the user if they exist, or create them if they don't
-        await users_collection.update_one(
-            {"_id": ctx.author.id}, 
-            {"$set": user_data}, 
-            upsert=True
-        )
-        await ctx.send(f"🤖 Hey {ctx.author.mention}, you've been registered in Shinchan's database!")
-    except Exception as e:
-        await ctx.send("An error occurred while saving to the database.")
-        print(f"Database Error: {e}")
-
-# 7. Run the bot
 if __name__ == '__main__':
     bot.run(TOKEN)
