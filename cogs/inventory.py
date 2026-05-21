@@ -67,9 +67,9 @@ class Inventory(commands.Cog):
             health = random.randint(40, 80)
             stress = random.randint(50, 90)
 
-        # --- INVENTORY FORMAT ---
+        # --- INVENTORY FORMAT (Spaced Out) ---
         if items:
-            inventory_text = "\n".join(
+            inventory_text = "\n\n".join(
                 f"• {item}" for item in items[:10]
             )
         else:
@@ -77,14 +77,14 @@ class Inventory(commands.Cog):
                 "No luxury assets or properties owned."
             )
 
-        # --- EMBED LAYOUT ---
+        # --- EMBED LAYOUT (Spaced Out) ---
         embed = discord.Embed(
             title="BitLife • Lifestyle Summary",
             description=(
                 f"Profile overview for {ctx.author.mention}\n\n"
-                f"Age • `{bitlife_age}`\n"
-                f"Status • `{status}`\n"
-                f"Reputation • `Stable`\n"
+                f"Age • `{bitlife_age}`\n\n"
+                f"Status • `{status}`\n\n"
+                f"Reputation • `Stable`\n\n"
                 f"Career • `Unemployed`"
             ),
             color=0x1A1A1A
@@ -96,12 +96,12 @@ class Inventory(commands.Cog):
             icon_url=ctx.author.display_avatar.url
         )
 
-        # --- FINANCIALS (Cleaned up layout) ---
+        # --- FINANCIALS (Spaced Out) ---
         embed.add_field(
             name=f"{cash_emoji} Finances",
             value=(
-                f"{cash_emoji} Cash Balance - **{coins:,} Coins**\n"
-                f"{diamonds_emoji} Premium Currency - **{gems:,} Gems**\n"
+                f"{cash_emoji} Cash Balance - **{coins:,} Coins**\n\n"
+                f"{diamonds_emoji} Premium Currency - **{gems:,} Gems**\n\n"
                 f"{life_emoji} Lifestyle Level - **Level {level}**"
             ),
             inline=False
@@ -114,13 +114,13 @@ class Inventory(commands.Cog):
             inline=False
         )
 
-        # --- LIFE STATUS ---
+        # --- LIFE STATUS (Spaced Out) ---
         embed.add_field(
             name=f"{level_emoji} Life Status",
             value=(
-                f"Happiness • `{happiness}%`\n"
-                f"Health • `{health}%`\n"
-                f"Stress • `{stress}%`\n"
+                f"Happiness • `{happiness}%`\n\n"
+                f"Health • `{health}%`\n\n"
+                f"Stress • `{stress}%`\n\n"
                 f"Discipline • `Strong`"
             ),
             inline=False
@@ -128,7 +128,6 @@ class Inventory(commands.Cog):
 
         # --- VISUALS ---
         embed.set_thumbnail(url=ctx.author.display_avatar.url)
-        # The GIF image line has been completely removed
         
         embed.set_footer(text=f"Citizen ID • {ctx.author.id}")
 
