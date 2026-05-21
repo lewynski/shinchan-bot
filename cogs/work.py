@@ -77,7 +77,7 @@ class ResignView(discord.ui.View):
         button.style = discord.ButtonStyle.secondary
         await interaction.response.edit_message(view=self)
         
-        # Send a private confirmation that they quit
+        # Send a private confirmation that they quit with the small text cooldown
         text = (
             "💼 You have officially resigned from your job. You must wait **5 Hours** before taking a new occupation.\n"
             f"-# Your next shift will be available <t:{int(resign_cooldown)}:R>."
@@ -100,6 +100,8 @@ class WorkCommand(commands.Cog):
         user_data = await collection.find_one({"_id": ctx.author.id}) or {}
         now = time.time()
         
+        loading_emoji = "<a:loading:1506983469610172560>"
+        
         # 1. Jail Check
         jail_until = user_data.get("jail_until", 0)
         if now < jail_until:
@@ -113,18 +115,18 @@ class WorkCommand(commands.Cog):
             if job_key:
                 view = ResignView(ctx.author.id)
                 text = (
-                    f"⏳ You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.\n"
-                    f"-# ⚠️ Warning: Resigning will incur a 5-hour cooldown before you can work again."
+                    f"{loading_emoji} You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.\n"
+                    f"-# Warning: Resigning will incur a 5-hour cooldown before you can work again."
                 )
                 return await ctx.send(content=text, view=view)
             else:
-                return await ctx.send(f"⏳ You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.")
+                return await ctx.send(f"{loading_emoji} You are exhausted. Your next shift is available <t:{int(work_cd)}:R>.")
 
         # 3. Unemployed & Resign Cooldown Check
         if not job_key or job_key not in JOBS:
             resign_cd = user_data.get("resign_cooldown", 0)
             if now < resign_cd:
-                return await ctx.send(f"⏳ You recently resigned from your job. You can apply for a new occupation <t:{int(resign_cd)}:R>.")
+                return await ctx.send(f"{loading_emoji} You recently resigned from your job. You can apply for a new occupation <t:{int(resign_cd)}:R>.")
                 
             text = "🏢 **City Employment Agency**\nYou are currently unemployed. Select a career path from the menu below to start earning."
             return await ctx.send(content=text, view=JobSelectView())
