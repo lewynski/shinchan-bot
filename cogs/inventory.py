@@ -11,10 +11,8 @@ class Inventory(commands.Cog):
         aliases=["inv"],
         description="View your or another citizen's lifestyle profile and assets."
     )
-    # Added 'member' parameter to allow tagging other users
     async def inventory(self, ctx: commands.Context, member: discord.Member = None):
         
-        # Determine the target user (either the tagged member, or the command author)
         target_user = member or ctx.author
         user_id = target_user.id
         
@@ -45,7 +43,6 @@ class Inventory(commands.Cog):
         items = user_data.get("items", [])
 
         # --- DYNAMIC AGE ---
-        # Calculates age based on the target user's Discord account creation date
         discord_age_years = (discord.utils.utcnow() - target_user.created_at).days // 365
         bitlife_age = 18 + discord_age_years
 
@@ -73,23 +70,20 @@ class Inventory(commands.Cog):
 
         # --- INVENTORY FORMAT ---
         if items:
-            inventory_text = "\n\n".join(
-                f"• {item}" for item in items[:10]
-            )
+            # Removed bullet points for a cleaner, modern list
+            inventory_text = "\n\n".join(f"{item}" for item in items[:10])
         else:
-            inventory_text = (
-                "No luxury assets or properties owned."
-            )
+            inventory_text = "No luxury assets or properties owned."
 
-        # --- EMBED LAYOUT ---
+        # --- EMBED LAYOUT (Stacked Modern UI) ---
         embed = discord.Embed(
             title="BitLife • Lifestyle Summary",
             description=(
                 f"Profile overview for {target_user.mention}\n\n"
-                f"Age • `{bitlife_age}`\n\n"
-                f"Status • `{status}`\n\n"
-                f"Reputation • `Stable`\n\n"
-                f"Career • `Unemployed`"
+                f"Age\n**{bitlife_age}**\n\n"
+                f"Status\n**{status}**\n\n"
+                f"Reputation\n**Stable**\n\n"
+                f"Career\n**Unemployed**"
             ),
             color=0x1A1A1A
         )
@@ -104,9 +98,9 @@ class Inventory(commands.Cog):
         embed.add_field(
             name=f"{cash_emoji} Finances",
             value=(
-                f"{cash_emoji} Cash Balance - **{coins:,} Coins**\n\n"
-                f"{diamonds_emoji} Premium Currency - **{gems:,} Gems**\n\n"
-                f"{life_emoji} Lifestyle Level - **Level {level}**"
+                f"Cash Balance\n**{coins:,} Coins**\n\n"
+                f"Premium Currency\n**{gems:,} Gems**\n\n"
+                f"Lifestyle Level\n**Level {level}**"
             ),
             inline=False
         )
@@ -122,17 +116,16 @@ class Inventory(commands.Cog):
         embed.add_field(
             name=f"{level_emoji} Life Status",
             value=(
-                f"Happiness • `{happiness}%`\n\n"
-                f"Health • `{health}%`\n\n"
-                f"Stress • `{stress}%`\n\n"
-                f"Discipline • `Strong`"
+                f"Happiness\n**{happiness}%**\n\n"
+                f"Health\n**{health}%**\n\n"
+                f"Stress\n**{stress}%**\n\n"
+                f"Discipline\n**Strong**"
             ),
             inline=False
         )
 
         # --- VISUALS ---
         embed.set_thumbnail(url=target_user.display_avatar.url)
-        
         embed.set_footer(text=f"Citizen ID • {target_user.id}")
 
         # --- SEND ---
