@@ -8,7 +8,7 @@ class Inventory(commands.Cog):
 
     @commands.hybrid_command(name="inventory", aliases=["inv"], description="View your current balance and collected assets.")
     async def inventory(self, ctx: commands.Context):
-        # 1. Acknowledge the command instantly to stop the 3-second countdown
+        # 1. Safely handle the strict 3-second window for both Slash and Prefix commands
         await ctx.defer()
         
         user_id = ctx.author.id
@@ -54,7 +54,7 @@ class Inventory(commands.Cog):
         if ctx.guild.icon:
             embed.set_thumbnail(url=ctx.guild.icon.url)
 
-        # Updated with your new white layout banner GIF
+        # Updated with your requested white layout banner GIF
         embed.set_image(url="[https://i.imgur.com/sHIxFaQ.gif](https://i.imgur.com/sHIxFaQ.gif)")
 
         # Subtle Footer
@@ -63,8 +63,9 @@ class Inventory(commands.Cog):
             icon_url=ctx.author.display_avatar.url
         )
 
-        # 2. CORE FIX: Send via the interaction followup channel to clear the "thinking" status
-        await ctx.interaction.followup.send(embed=embed)
+        # 2. CORE FIX: Use standard ctx.send after deferring. 
+        # discord.py automatically intercepts this and edits the "thinking" bubble perfectly!
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Inventory(bot))
