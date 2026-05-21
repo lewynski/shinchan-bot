@@ -27,26 +27,26 @@ class Role(commands.Cog):
             return await ctx.send(f"System Error: The role {role.mention} is positioned above this bot's hierarchy.", ephemeral=True)
 
         try:
-            # Case A: Removing the role
+            # Case A: Removing the role (Custom Burgundy Color)
             if role in member.roles:
                 await member.remove_roles(role)
                 
                 embed = discord.Embed(
                     title="H I E R A R C H Y  U P D A T E",
-                    color=discord.Color.red()
+                    color=discord.Color(0x800020) # Custom Burgundy Red Accent
                 )
                 embed.add_field(name="Target User", value=member.mention, inline=True)
                 embed.add_field(name="Role Revoked", value=role.mention, inline=True)
                 embed.add_field(name="Status", value="```diff\n- Removed\n```", inline=False)
                 embed.set_image(url="https://i.imgur.com/kQn4191.gif")
 
-            # Case B: Adding the role
+            # Case B: Adding the role (Pure Black Color)
             else:
                 await member.add_roles(role)
                 
                 embed = discord.Embed(
                     title="H I E R A R C H Y  U P D A T E",
-                    color=0x000000 
+                    color=0x000000 # Pure Black Accent
                 )
                 embed.add_field(name="Target User", value=member.mention, inline=True)
                 embed.add_field(name="Role Granted", value=role.mention, inline=True)
@@ -70,7 +70,7 @@ class Role(commands.Cog):
         except Exception as e:
             await ctx.send(f"System Error: {e}", ephemeral=True)
 
-    # Clean Error Logging (Error notifications are also kept emoji-free)
+    # Clean Error Logging
     @role.error
     async def role_error(self, ctx, error):
         if isinstance(error, commands.MissingAnyRole):
