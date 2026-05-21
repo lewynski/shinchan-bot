@@ -1,9 +1,6 @@
 import discord
 from discord.ext import commands
 
-# --- CUSTOM EMOJI ---
-PENDANT_EMOJI = "<:pendant:1506988725794771026>"
-
 class MenuPaginator(discord.ui.View):
     def __init__(self, commands_list, author_id):
         super().__init__(timeout=60)
@@ -36,14 +33,14 @@ class MenuPaginator(discord.ui.View):
         embed.set_footer(text=f"Page {self.page + 1} / {((len(self.commands_list)-1)//self.items_per_page)+1}")
         return embed
 
-    @discord.ui.button(style=discord.ButtonStyle.secondary, emoji=PENDANT_EMOJI, custom_id="prev")
+    @discord.ui.button(label="◀️", style=discord.ButtonStyle.secondary, custom_id="prev")
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id == self.author_id:
             self.page -= 1
             self.update_buttons()
             await interaction.response.edit_message(embed=self.get_embed(), view=self)
 
-    @discord.ui.button(style=discord.ButtonStyle.secondary, emoji=PENDANT_EMOJI, custom_id="next")
+    @discord.ui.button(label="▶️", style=discord.ButtonStyle.secondary, custom_id="next")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id == self.author_id:
             self.page += 1
@@ -59,7 +56,6 @@ class Shinchan(commands.Cog):
             ("/rob <user>", "Attempt to steal coins from another citizen."),
             ("/shop", "Browse the Black Market for exclusive perks."),
             ("/role <user> <role>", "Grant or revoke roles (Staff only).")
-            # You can add more commands here in the future
         ]
 
     @commands.hybrid_command(name="shinchan", description="View all available commands.")
