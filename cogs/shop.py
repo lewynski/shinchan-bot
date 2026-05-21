@@ -54,6 +54,18 @@ class ShopView(discord.ui.View):
         collection, user_id, user_data = await self.get_user_data(interaction)
 
         coins = user_data.get("coins", 0)
+        pendant_until = user_data.get("pendant_until", 0)
+
+        if pendant_until > time.time():
+            remaining = int(pendant_until - time.time())
+            hours, remainder = divmod(remaining, 3600)
+            minutes, _ = divmod(remainder, 60)
+
+            return await interaction.response.send_message(
+                f"You already have an active pendant. Try again in {hours}h {minutes}m.",
+                ephemeral=True,
+            )
+
         if coins < 5000:
             return await interaction.response.send_message(
                 f"You only have {coins:,} coins. Need 5,000.", ephemeral=True
@@ -91,6 +103,7 @@ class ShopView(discord.ui.View):
             return await interaction.response.send_message(
                 "You already have an active necklace!", ephemeral=True
             )
+
         if coins < 3000:
             return await interaction.response.send_message(
                 f"You only have {coins:,} coins. Need 3,000.", ephemeral=True
