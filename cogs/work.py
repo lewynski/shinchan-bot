@@ -77,7 +77,7 @@ class ResignView(discord.ui.View):
         button.style = discord.ButtonStyle.secondary
         await interaction.response.edit_message(view=self)
         
-        # Send a private confirmation that they quit with the new small text cooldown
+        # Send a private confirmation that they quit with the small text cooldown
         text = (
             "💼 You have officially resigned from your job. You must wait **5 Hours** before taking a new occupation.\n"
             f"-# You are exhausted. Your next shift is available <t:{int(resign_cooldown)}:R>."
@@ -142,9 +142,8 @@ class WorkCommand(commands.Cog):
             f"-# Great job, {job_title}!"
         )
         
-        # Attach the Resign button to the successful work payout
-        view = ResignView(ctx.author.id)
-        await ctx.send(content=text, view=view)
+        # Clean text response only. No Resign button here anymore!
+        await ctx.send(content=text)
 
 async def setup(bot):
     await bot.add_cog(WorkCommand(bot))
