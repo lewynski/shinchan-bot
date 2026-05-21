@@ -2,13 +2,30 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
+# Store your authorized Role IDs in a secure tuple
+AUTHORIZED_ROLES = (1506809407588008027, 1506810633637859401)
+
+def is_staff_or_mod():
+    """Custom check to verify if the user has any of the authorized role IDs."""
+    async def predicate(ctx):
+        # Extract all role IDs the user currently has
+        user_role_ids = [role.id for role in ctx.author.roles]
+        
+        # Check if there is any overlap between user roles and authorized roles
+        if any(role_id in AUTHORIZED_ROLES for role_id in user_role_ids):
+            return True
+            
+        # Raise a specific error if they don't match, so our error handler can grab it
+        raise commands.MissingAnyRole(AUTHORIZED_ROLES)
+    return commands.check(predicate)
+
 class Role(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # @commands.hybrid_command makes this work as BOTH "srole" and "/role"
     @commands.hybrid_command(name="role", description="Toggle a role: Adds it if missing, removes it if owned.")
-    @commands.has_any_role('Staff', 'Moderator') # Only allows users with these exact role names
+    @is_staff_or_mod() # Applies our secure ID check here
     @app_commands.describe(member="The user to modify", role="The role to add or remove")
     async def role(self, ctx: commands.Context, member: discord.Member, role: discord.Role):
         
@@ -58,7 +75,7 @@ class Role(commands.Cog):
     @role.error
     async def role_error(self, ctx, error):
         if isinstance(error, commands.MissingAnyRole):
-            await ctx.send("❌ Only **Staff** and **Moderators** are authorized to use this command.", ephemeral=True)
+            await ctx.send("❌ Only authorized Staff and Moderators are allowed to use this command.", ephemeral=True)
         elif isinstance(error, commands.MemberNotFound):
             await ctx.send("❌ Could not find that user. Try mentioning them, replying to their message, or using their user ID.", ephemeral=True)
         elif isinstance(error, commands.RoleNotFound):
