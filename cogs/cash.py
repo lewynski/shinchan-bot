@@ -21,7 +21,7 @@ class CashCommand(commands.Cog):
         
         # Clean, direct text with the demoncat at the end of the sentence
         text = (
-            f"You currently have {cash_emoji} **{coins:,}** {demoncat_emoji}.\n"
+            f"{demoncat_emoji} You currently have {cash_emoji} **{coins:,}**.\n"
             f"-# Watch your pockets. The streets aren't always safe."
         )
             
