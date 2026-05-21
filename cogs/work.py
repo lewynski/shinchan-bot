@@ -34,7 +34,7 @@ class JobSelect(discord.ui.Select):
         
         job_info = JOBS[selected_job]
         await interaction.response.edit_message(
-            content=f"You have officially started your career as a {job_info['emoji']} **{job_info['stages'][0]}**! Use `/work` again to start your first shift.",
+            content=f"✅ You have officially started your career as a {job_info['emoji']} **{job_info['stages'][0]}**!\nUse `/work` again to start your first shift.",
             view=None
         )
 
@@ -68,12 +68,8 @@ class WorkCommand(commands.Cog):
 
         job_key = user_data.get("job")
         if not job_key or job_key not in JOBS:
-            embed = discord.Embed(
-                title="City Employment Agency",
-                description="You are currently unemployed. Select a career path from the menu below to start earning.",
-                color=0x2B2D31
-            )
-            return await ctx.send(embed=embed, view=JobSelectView())
+            text = "🏢 **City Employment Agency**\nYou are currently unemployed. Select a career path from the menu below to start earning."
+            return await ctx.send(content=text, view=JobSelectView())
 
         shifts = user_data.get("shifts", 0) + 1
         stage_idx, salary = self.get_stage_and_salary(shifts)
@@ -87,13 +83,16 @@ class WorkCommand(commands.Cog):
             upsert=True
         )
 
-        embed = discord.Embed(
-            title=f"{job_info['emoji']} Shift Completed",
-            description=f"Great job, **{job_title}**!\nYou earned **{salary:,} Coins** for your hard work.",
-            color=0x57F287
+        # Your custom animated emoji
+        cash_emoji = "<a:cash:1506921225484767282>"
+        
+        # Format the text with the emoji and small text markdown (-#)
+        text = (
+            f"{job_info['emoji']} You earned {cash_emoji} **{salary:,}** for your hardwork.\n"
+            f"-# Great job, {job_title}!"
         )
-        embed.set_footer(text=f"Total shifts completed: {shifts}")
-        await ctx.send(embed=embed)
+        
+        await ctx.send(content=text)
 
 async def setup(bot):
     await bot.add_cog(WorkCommand(bot))
