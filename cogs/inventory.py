@@ -9,11 +9,14 @@ class Inventory(commands.Cog):
     @commands.hybrid_command(
         name="inventory",
         aliases=["inv"],
-        description="View your lifestyle profile and assets."
+        description="View your or another citizen's lifestyle profile and assets."
     )
-    async def inventory(self, ctx: commands.Context):
-
-        user_id = ctx.author.id
+    # Added 'member' parameter to allow tagging other users
+    async def inventory(self, ctx: commands.Context, member: discord.Member = None):
+        
+        # Determine the target user (either the tagged member, or the command author)
+        target_user = member or ctx.author
+        user_id = target_user.id
         
         # --- CUSTOM ANIMATED EMOJIS ---
         cash_emoji = "<a:cash:1506921225484767282>"
@@ -42,7 +45,8 @@ class Inventory(commands.Cog):
         items = user_data.get("items", [])
 
         # --- DYNAMIC AGE ---
-        discord_age_years = (discord.utils.utcnow() - ctx.author.created_at).days // 365
+        # Calculates age based on the target user's Discord account creation date
+        discord_age_years = (discord.utils.utcnow() - target_user.created_at).days // 365
         bitlife_age = 18 + discord_age_years
 
         # --- NET WORTH RANK & DYNAMIC STATS ---
@@ -67,7 +71,7 @@ class Inventory(commands.Cog):
             health = random.randint(40, 80)
             stress = random.randint(50, 90)
 
-        # --- INVENTORY FORMAT (Spaced Out) ---
+        # --- INVENTORY FORMAT ---
         if items:
             inventory_text = "\n\n".join(
                 f"• {item}" for item in items[:10]
@@ -77,11 +81,11 @@ class Inventory(commands.Cog):
                 "No luxury assets or properties owned."
             )
 
-        # --- EMBED LAYOUT (Spaced Out) ---
+        # --- EMBED LAYOUT ---
         embed = discord.Embed(
             title="BitLife • Lifestyle Summary",
             description=(
-                f"Profile overview for {ctx.author.mention}\n\n"
+                f"Profile overview for {target_user.mention}\n\n"
                 f"Age • `{bitlife_age}`\n\n"
                 f"Status • `{status}`\n\n"
                 f"Reputation • `Stable`\n\n"
@@ -92,11 +96,11 @@ class Inventory(commands.Cog):
 
         # --- PROFILE ---
         embed.set_author(
-            name=str(ctx.author),
-            icon_url=ctx.author.display_avatar.url
+            name=str(target_user),
+            icon_url=target_user.display_avatar.url
         )
 
-        # --- FINANCIALS (Spaced Out) ---
+        # --- FINANCIALS ---
         embed.add_field(
             name=f"{cash_emoji} Finances",
             value=(
@@ -114,7 +118,7 @@ class Inventory(commands.Cog):
             inline=False
         )
 
-        # --- LIFE STATUS (Spaced Out) ---
+        # --- LIFE STATUS ---
         embed.add_field(
             name=f"{level_emoji} Life Status",
             value=(
@@ -127,9 +131,9 @@ class Inventory(commands.Cog):
         )
 
         # --- VISUALS ---
-        embed.set_thumbnail(url=ctx.author.display_avatar.url)
+        embed.set_thumbnail(url=target_user.display_avatar.url)
         
-        embed.set_footer(text=f"Citizen ID • {ctx.author.id}")
+        embed.set_footer(text=f"Citizen ID • {target_user.id}")
 
         # --- SEND ---
         await ctx.send(embed=embed)
