@@ -22,6 +22,8 @@ class Leaderboard(commands.Cog):
             return await ctx.send("The leaderboard is currently empty.")
 
         trophy_emoji = "<a:trophy:1507185290173874176>"
+        cash_emoji = "<a:cash:1506921225484767282>"
+
         crowns = {
             1: "<:1crown:1507184842503098468>",
             2: "<:2crown:1507184840779235521>",
@@ -54,13 +56,20 @@ class Leaderboard(commands.Cog):
 
             member = ctx.guild.get_member(user_id) if user_id else None
 
-            if member:
-                name = member.display_name
-            else:
-                name = f"User {raw_user_id}"
+            if member is None and user_id:
+                try:
+                    member = await ctx.guild.fetch_member(user_id)
+                except discord.NotFound:
+                    member = None
+                except discord.HTTPException:
+                    member = None
 
+            name = member.display_name if member else f"User {raw_user_id}"
             crown = crowns.get(i, crowns[3])
-            leaderboard_text += f"{crown} **{i}. {name}** - {coins:,} coins\n"
+
+            leaderboard_text += (
+                f"{crown} **{i}. {name}** - {coins:,} {cash_emoji}\n"
+            )
 
         embed.add_field(name="Current Standings", value=leaderboard_text, inline=False)
         await ctx.send(embed=embed)
