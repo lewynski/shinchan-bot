@@ -48,16 +48,20 @@ class SlotsCommand(commands.Cog):
 
         symbols = [MONEY, CIGARETTE, PILL, PISTOL, BLACKHEART]
 
-        embed = discord.Embed(
-            title="🎰 Underground Slots",
-            description=(
-                f"**Bet:** {cash_emoji} {bet:,}\n\n"
-                "[ ⬛ | ⬛ | ⬛ ]\n\n"
-                "*Spinning the reels...*"
-            ),
-            color=0x2B2D31,
+        phrases = [
+            "The machine coughs smoke and keeps your secrets.",
+            "Neon lights flicker over the payout line.",
+            "Some nights the city pays. Some nights it collects.",
+            "The reels spin like they know something you do not.",
+            "The basement goes quiet for the final click.",
+        ]
+
+        msg = await ctx.send(
+            f"**Underground Slots**\n"
+            f"Bet: {cash_emoji} **{bet:,}**\n\n"
+            f"`[ ? | ? | ? ]`\n"
+            f"-# Spinning the reels..."
         )
-        msg = await ctx.send(embed=embed)
 
         await asyncio.sleep(2)
 
@@ -68,20 +72,15 @@ class SlotsCommand(commands.Cog):
         if s1 == s2 == s3:
             multiplier = 10
             result_text = (
-                f"{demoncat_emoji} **JACKPOT!** "
-                f"You won {cash_emoji} **{bet * multiplier:,}**!"
+                f"{demoncat_emoji} **JACKPOT!** You won "
+                f"{cash_emoji} **{bet * multiplier:,}**."
             )
-            color = discord.Color.gold()
         elif s1 == s2 or s2 == s3 or s1 == s3:
             multiplier = 1
-            result_text = (
-                f"**Close one.** You got your {cash_emoji} **{bet:,}** back."
-            )
-            color = discord.Color.light_grey()
+            result_text = f"**Close one.** You got your {cash_emoji} **{bet:,}** back."
         else:
             multiplier = 0
             result_text = f"**Bust.** You lost {cash_emoji} **{bet:,}**."
-            color = discord.Color.dark_red()
 
         winnings = (bet * multiplier) - bet
 
@@ -91,18 +90,15 @@ class SlotsCommand(commands.Cog):
             upsert=True,
         )
 
-        final_embed = discord.Embed(
-            title="🎰 Underground Slots",
-            description=(
-                f"**Bet:** {cash_emoji} {bet:,}\n\n"
-                f"**[ {s1} | {s2} | {s3} ]**\n\n"
-                f"{result_text}"
-            ),
-            color=color,
+        await msg.edit(
+            content=(
+                f"**Underground Slots**\n"
+                f"Bet: {cash_emoji} **{bet:,}**\n\n"
+                f"[ {s1} | {s2} | {s3} ]\n\n"
+                f"{result_text}\n"
+                f"-# {random.choice(phrases)}"
+            )
         )
-        final_embed.set_footer(text="The house always gets its cut.")
-
-        await msg.edit(embed=final_embed)
 
 
 async def setup(bot):
