@@ -43,6 +43,9 @@ class Leaderboard(commands.Cog):
             color=0xFFFFFF,
         )
 
+        if ctx.guild.icon:
+            embed.set_thumbnail(url=ctx.guild.icon.url)
+
         leaderboard_text = ""
 
         for i, user_data in enumerate(top_users, 1):
