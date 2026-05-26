@@ -56,6 +56,14 @@ class RaceCommand(commands.Cog):
                 "Your balance changed before the race started. Try again."
             )
 
+        phrases = [
+            "The streetlights blur. Nobody asks who paid off the guards.",
+            "Engines scream through the midnight market.",
+            "The crowd goes quiet when the finish line shows up.",
+            "Someone in the alley already knows the odds.",
+            "Fast money always leaves tire marks.",
+        ]
+
         finn_emoji = "<a:fin:1508749987775774861>"
         bubble_emoji = "<a:bubble:1508749980918087790>"
         bmo_emoji = "<a:bmo:1508749925159010344>"
@@ -76,19 +84,16 @@ class RaceCommand(commands.Cog):
                 path_ahead = "-" * (track_length - position)
                 lines.append(
                     f"**{name.capitalize()}**\n"
-                    f"`{path_behind}`{data['emoji']}`{path_ahead}` FINISH"
+                    f"`{path_behind}`{data['emoji']}`{path_ahead}` `FINISH`"
                 )
             return "\n\n".join(lines)
 
-        embed = discord.Embed(
-            title="Underground Midnight Race",
-            description=(
-                f"You bet {cash_emoji} **{bet:,}** on **{racer.capitalize()}**.\n\n"
-                f"{get_track_display()}"
-            ),
-            color=0x2B2D31,
+        msg = await ctx.send(
+            f"**Underground Midnight Race**\n"
+            f"Bet: {cash_emoji} **{bet:,}** on **{racer.capitalize()}**\n\n"
+            f"{get_track_display()}\n\n"
+            f"-# The racers are lining up..."
         )
-        msg = await ctx.send(embed=embed)
 
         winner = None
 
@@ -108,11 +113,14 @@ class RaceCommand(commands.Cog):
                 finishers.sort(key=lambda x: racers_data[x]["pos"], reverse=True)
                 winner = finishers[0]
 
-            embed.description = (
-                f"You bet {cash_emoji} **{bet:,}** on **{racer.capitalize()}**.\n\n"
-                f"{get_track_display()}"
+            await msg.edit(
+                content=(
+                    f"**Underground Midnight Race**\n"
+                    f"Bet: {cash_emoji} **{bet:,}** on **{racer.capitalize()}**\n\n"
+                    f"{get_track_display()}\n\n"
+                    f"-# The race tears through the backstreets..."
+                )
             )
-            await msg.edit(embed=embed)
 
         if winner == racer.lower():
             payout = bet * 2
@@ -120,14 +128,12 @@ class RaceCommand(commands.Cog):
                 f"**{winner.capitalize()}** crossed the finish line first. "
                 f"You won {cash_emoji} **{bet:,}** profit."
             )
-            color = discord.Color.green()
         else:
             payout = 0
             result_text = (
                 f"**{winner.capitalize()}** won the race. "
                 f"You lost your {cash_emoji} **{bet:,}** bet on {racer.capitalize()}."
             )
-            color = discord.Color.red()
 
         if payout:
             await collection.update_one(
@@ -136,11 +142,14 @@ class RaceCommand(commands.Cog):
                 upsert=True,
             )
 
-        embed.color = color
-        embed.description = (
-            f"**THE RACE IS OVER!**\n\n{get_track_display()}\n\n{result_text}"
+        await msg.edit(
+            content=(
+                f"**The Race Is Over**\n\n"
+                f"{get_track_display()}\n\n"
+                f"{result_text}\n"
+                f"-# {random.choice(phrases)}"
+            )
         )
-        await msg.edit(embed=embed)
 
 
 async def setup(bot):
