@@ -25,6 +25,7 @@ class RaceCommand(commands.Cog):
 
         if bet <= 0:
             return await ctx.send("You must bet a valid amount of coins.")
+
         if bet > 50000:
             return await ctx.send(
                 f"The betting pool is capped. Max bet is {cash_emoji} **50,000**."
@@ -78,14 +79,17 @@ class RaceCommand(commands.Cog):
 
         def get_track_display():
             lines = []
+
             for name, data in racers_data.items():
                 position = min(data["pos"], track_length)
-                path_behind = "-" * position
-                path_ahead = "-" * (track_length - position)
+                path_behind = "━" * position
+                path_ahead = "─" * (track_length - position)
+
                 lines.append(
                     f"**{name.capitalize()}**\n"
-                    f"`{path_behind}`{data['emoji']}`{path_ahead}` `FINISH`"
+                    f"{path_behind}{data['emoji']}{path_ahead} FINISH"
                 )
+
             return "\n\n".join(lines)
 
         msg = await ctx.send(
