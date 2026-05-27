@@ -15,8 +15,8 @@ class Leaderboard(commands.Cog):
     async def leaderboard(self, ctx: commands.Context):
         collection = self.bot.db["daily_cooldowns"]
 
-        cursor = collection.find({"coins": {"$gt": 0}}).sort("coins", -1).limit(10)
-        top_users = await cursor.to_list(length=10)
+        cursor = collection.find({"coins": {"$gt": 0}}).sort("coins", -1).limit(25)
+        top_users = await cursor.to_list(length=25)
 
         if not top_users:
             return await ctx.send("The leaderboard is currently empty.")
@@ -47,32 +47,37 @@ class Leaderboard(commands.Cog):
             embed.set_thumbnail(url=ctx.guild.icon.url)
 
         leaderboard_text = ""
+        rank = 1
 
-        for i, user_data in enumerate(top_users, 1):
+        for user_data in top_users:
             raw_user_id = user_data.get("_id")
             coins = user_data.get("coins", 0)
 
             try:
                 user_id = int(raw_user_id)
             except (TypeError, ValueError):
-                user_id = None
+                continue
 
-            member = ctx.guild.get_member(user_id) if user_id else None
+            member = ctx.guild.get_member(user_id)
 
-            if member is None and user_id:
+            if member is None:
                 try:
                     member = await ctx.guild.fetch_member(user_id)
-                except discord.NotFound:
-                    member = None
-                except discord.HTTPException:
-                    member = None
+                except (discord.NotFound, discord.HTTPException):
+                    continue
 
-            name = member.display_name if member else f"User {raw_user_id}"
-            crown = crowns.get(i, crowns[3])
-
+            crown = crowns.get(rank, crowns[3])
             leaderboard_text += (
-                f"{crown} **{i}. {name}** - {coins:,} {cash_emoji}\n"
+                f"{crown} **{rank}. {member.display_name}** - {coins:,} {cash_emoji}\n"
             )
+
+            rank += 1
+
+            if rank > 10:
+                break
+
+        if not leaderboard_text:
+            return await ctx.send("The leaderboard is currently empty for this server.")
 
         embed.add_field(name="Current Standings", value=leaderboard_text, inline=False)
         await ctx.send(embed=embed)
