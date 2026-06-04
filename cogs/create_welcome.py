@@ -16,8 +16,15 @@ class BasicInfoModal(discord.ui.Modal, title="Edit Basic Information"):
             label="Embed Description", style=discord.TextStyle.paragraph, required=False,
             default=view.preview_embed.description if view.preview_embed.description else ""
         )
+        
+        # Pull the color from the current draft so the staff can see the Hex code
+        current_color = ""
+        if view.preview_embed.color:
+            current_color = f"#{view.preview_embed.color.value:06x}"
+
         self.emb_color = discord.ui.TextInput(
-            label="Hex Color (e.g. #2b2d31)", style=discord.TextStyle.short, required=False
+            label="Hex Color (e.g. #2b2d31)", style=discord.TextStyle.short, required=False,
+            default=current_color
         )
 
         self.add_item(self.emb_title)
@@ -115,8 +122,70 @@ class ImagesModal(discord.ui.Modal, title="Edit the Images"):
         await self.builder_view.update_preview(interaction)
 
 
-# --- VIEW (The interactive buttons below the message) ---
+# --- TEMPLATE DROPDOWN ---
+class TemplateSelect(discord.ui.Select):
+    def __init__(self, parent_view):
+        self.parent_view = parent_view
+        options = [
+            discord.SelectOption(label="Blank Canvas", description="Start from scratch.", emoji="📄", value="blank"),
+            discord.SelectOption(label="Gothic / Dark", description="Invisible background, crosses, dark aesthetic.", emoji="🦇", value="gothic"),
+            discord.SelectOption(label="Cute / Soft", description="Pastel theme, sparkles, and kaomoji.", emoji="🌸", value="cute"),
+            discord.SelectOption(label="Minimalist", description="Clean, professional, and simple.", emoji="🔲", value="minimal")
+        ]
+        super().__init__(placeholder="Select a pre-made template...", min_values=1, max_values=1, options=options, row=4)
 
+    async def callback(self, interaction: discord.Interaction):
+        # 1. Load the template data into the draft secretly
+        if self.values[0] == "gothic":
+            self.parent_view.preview_embed.color = discord.Color(0x2b2d31)
+            self.parent_view.preview_embed.title = None
+            self.parent_view.preview_embed.description = (
+                "♱ ⸸ ✦ ₊ ˚. ✞\n\n"
+                "      ⋆      welc... to the underground.   ♱   *Born to die.*\n\n"
+                "➦   [intros](https://discord.com)  🪦  [info](https://discord.com) 🧾 \n"
+                "✿       [perks](https://discord.com)    *.·:·.✧.·:·.* ♡"
+            )
+            self.parent_view.preview_embed.set_footer(text="welc !  ,,  we now have a new member !")
+            
+        elif self.values[0] == "cute":
+            self.parent_view.preview_embed.color = discord.Color(0xffb6c1)
+            self.parent_view.preview_embed.title = "🎀 Welcome to the server! 🎀"
+            self.parent_view.preview_embed.description = (
+                "ʚ♡ɞ ⁺˖ ⸝⸝\n\n"
+                "╭◜◝ ͡ ◜◝╮\n"
+                "( ᯅ̈.  ) grab your roles!\n"
+                "╰◟◞ ͜ ◟◞╯\n\n"
+                "🌸 ➜ [rules](https://discord.com)  |  🍧 ➜ [chat](https://discord.com)"
+            )
+            self.parent_view.preview_embed.set_footer(text="enjoy your stay ~ ♡")
+            
+        elif self.values[0] == "minimal":
+            self.parent_view.preview_embed.color = discord.Color(0xffffff)
+            self.parent_view.preview_embed.title = "SERVER DIRECTORY"
+            self.parent_view.preview_embed.description = (
+                "**Welcome to the community.**\n"
+                "───────────────\n"
+                "Please read the rules before participating.\n\n"
+                "▸ [Information](https://discord.com)\n"
+                "▸ [Roles](https://discord.com)"
+            )
+            self.parent_view.preview_embed.set_footer(text="Official Server Welcome")
+            
+        elif self.values[0] == "blank":
+            self.parent_view.preview_embed.color = discord.Color(0x2b2d31)
+            self.parent_view.preview_embed.title = "New Embed"
+            self.parent_view.preview_embed.description = "Click the buttons below to build your embed."
+            self.parent_view.preview_embed.clear_fields()
+            self.parent_view.preview_embed.remove_author()
+            self.parent_view.preview_embed.remove_footer()
+            self.parent_view.preview_embed.set_image(url=None)
+            self.parent_view.preview_embed.set_thumbnail(url=None)
+
+        # 2. INSTANTLY open the text editor so the staff can revise the template text!
+        await interaction.response.send_modal(BasicInfoModal(self.parent_view))
+
+
+# --- VIEW (The interactive buttons below the message) ---
 class EmbedBuilderView(discord.ui.View):
     def __init__(self, ctx, target_channel):
         super().__init__(timeout=600)
@@ -125,9 +194,12 @@ class EmbedBuilderView(discord.ui.View):
         
         self.preview_embed = discord.Embed(
             title="New Embed", 
-            description="Click the buttons below to build your embed.",
+            description="Click the buttons below or select a template to build your embed.",
             color=0x2b2d31
         )
+        
+        # Attach the Dropdown Menu
+        self.add_item(TemplateSelect(self))
 
     async def update_preview(self, interaction: discord.Interaction):
         await interaction.response.edit_message(embed=self.preview_embed, view=self)
@@ -176,24 +248,23 @@ class EmbedBuilderView(discord.ui.View):
 
 
 # --- MAIN COG ---
-
-class CreateCommand(commands.Cog):
+class CreateWelcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # 1. THE CREATE COMMAND
-    @commands.hybrid_command(name="create", description="Open the interactive Embed Builder (Staff Only).")
+    # 1. THE CREATE WELCOME COMMAND
+    @commands.hybrid_command(name="create_welcome", description="Open the interactive Welcome Embed Builder (Staff Only).")
     @commands.has_permissions(manage_messages=True)
-    async def create_embed(self, ctx: commands.Context, channel: discord.TextChannel = None):
+    async def create_welcome(self, ctx: commands.Context, channel: discord.TextChannel = None):
         target = channel or ctx.channel 
         
         view = EmbedBuilderView(ctx, target)
         
-        content = f"🛠️ **Embed Builder** | Target: {target.mention}"
+        content = f"🛠️ **Welcome Builder** | Target: {target.mention}\n*Pick a template below to get started!*"
         await ctx.send(content=content, embed=view.preview_embed, view=view)
 
-    @create_embed.error
-    async def create_embed_error(self, ctx, error):
+    @create_welcome.error
+    async def create_welcome_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
             await ctx.send("❌ You do not have permission to use the embed builder.", ephemeral=True)
 
@@ -225,4 +296,4 @@ class CreateCommand(commands.Cog):
             await ctx.send("❌ You do not have permission to use this command.", ephemeral=True)
 
 async def setup(bot):
-    await bot.add_cog(CreateCommand(bot))
+    await bot.add_cog(CreateWelcome(bot))
