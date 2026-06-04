@@ -3,7 +3,7 @@ import random
 
 from discord.ext import commands
 
-from announcement import send_pending_announcement
+from cogs.announcement import send_pending_announcement
 
 
 class Daily(commands.Cog):
