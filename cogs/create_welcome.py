@@ -1,5 +1,4 @@
 import json
-
 import discord
 from discord.ext import commands
 
@@ -204,7 +203,7 @@ class TemplateSelect(discord.ui.Select):
             ),
             discord.SelectOption(
                 label="Cute / Soft",
-                description="Pastel welcome layout.",
+                description="Pastel aesthetic and kaomoji.",
                 value="cute",
             ),
             discord.SelectOption(
@@ -226,23 +225,28 @@ class TemplateSelect(discord.ui.Select):
             self.parent_view.raw_dict = {
                 "color": 0x2B2D31,
                 "description": (
-                    "**Welcome to the underground, {user}.**\n\n"
-                    "Read the info, pick your roles, and keep your eyes open.\n\n"
-                    "[Intros](https://discord.com) | "
-                    "[Info](https://discord.com) | "
-                    "[Perks](https://discord.com)"
+                    "♱ ⸸ ✦ ₊ ˚. ✞\n\n"
+                    "      ⋆      welc... {user} to the underground.   ♱   *Born to die.*\n\n"
+                    "➦   [intros](https://discord.com)  🪦  [info](https://discord.com) 🧾 \n"
+                    "✿       [perks](https://discord.com)    *.·:·.✧.·:·.* ♡"
                 ),
                 "footer": {"text": "Member #{member_count}"},
             }
         elif self.values[0] == "cute":
             self.parent_view.raw_dict = {
                 "color": 0xFFB6C1,
-                "title": "Welcome to {server}",
+                "title": "🎀 Welcome to {server}! 🎀",
                 "description": (
-                    "Welcome, {user}.\n\n"
-                    "Grab your roles, say hello, and enjoy your stay."
+                    "ʚ♡ɞ ⁺˖ ⸝⸝\n\n"
+                    "Hewwo {user}! (´꒳`)♡\n"
+                    "We are so happy you joined us!\n\n"
+                    "╭◜◝ ͡ ◜◝╮\n"
+                    "( ᯅ̈.  ) grab your roles!\n"
+                    "╰◟◞ ͜ ◟◞╯\n\n"
+                    "🌸 ➜ [rules](https://discord.com)  |  👾 ➜ [chat](https://discord.com)\n\n"
+                    "-# *Tip: Add a cute pixel-art GIF in the bottom image box!*"
                 ),
-                "footer": {"text": "Member #{member_count}"},
+                "footer": {"text": "enjoy your stay ~ ♡ | Member #{member_count}"},
                 "thumbnail": {"url": "{avatar}"},
             }
         elif self.values[0] == "minimal":
@@ -387,7 +391,7 @@ class EmbedBuilderView(discord.ui.View):
 
         await interaction.followup.send(
             (
-                "**Welcome setup saved.** New members will be welcomed in "
+                "**✅ Welcome setup saved.** New members will be welcomed in "
                 f"{self.target_channel.mention}."
             ),
             ephemeral=True,
@@ -500,73 +504,44 @@ class CreateWelcome(commands.Cog):
         except discord.Forbidden:
             pass
 
+    # --- THE NEW DISABLE COMMAND ---
     @commands.hybrid_command(
-        name="remove_embed",
-        aliases=["delete_embed", "delwelcome"],
-        description="Delete an existing bot message using its ID.",
+        name="disable_welcome",
+        description="Turn off the welcome system for this server.",
     )
     @commands.has_permissions(manage_messages=True)
-    async def remove_embed(
-        self,
-        ctx: commands.Context,
-        message_id: str,
-        channel: discord.TextChannel = None,
-    ):
+    async def disable_welcome(self, ctx: commands.Context):
         if ctx.interaction:
             await ctx.defer(ephemeral=True)
 
-        target_channel = channel or ctx.channel
+        collection = self.bot.db["servers"]
+        
+        result = await collection.update_one(
+            {"_id": ctx.guild.id},
+            {"$unset": {"welcome_channel": "", "welcome_embed": ""}}
+        )
 
-        try:
-            msg = await target_channel.fetch_message(int(message_id))
-
-            if msg.author.id != self.bot.user.id:
-                return await send_ctx(
-                    ctx,
-                    "I can only delete messages that were sent by me.",
-                    ephemeral=True,
-                )
-
-            await msg.delete()
+        if result.modified_count > 0:
             await send_ctx(
                 ctx,
-                f"Successfully deleted the bot message in {target_channel.mention}.",
-                ephemeral=True,
-            )
-        except discord.NotFound:
-            await send_ctx(
-                ctx,
-                "Could not find that message. Check the ID and channel.",
-                ephemeral=True,
-            )
-        except discord.Forbidden:
-            await send_ctx(
-                ctx,
-                "I don't have permission to delete that message.",
-                ephemeral=True,
-            )
-        except ValueError:
-            await send_ctx(
-                ctx,
-                "Invalid ID format. Please provide a numeric message ID.",
-                ephemeral=True,
-            )
-
-    @remove_embed.error
-    async def remove_embed_error(self, ctx: commands.Context, error):
-        if isinstance(error, commands.MissingPermissions):
-            await send_ctx(
-                ctx,
-                "You need `Manage Messages` permission to use this command.",
+                "✅ **Welcome system disabled.** The bot will no longer welcome new members.",
                 ephemeral=True,
             )
         else:
             await send_ctx(
                 ctx,
-                f"Something went wrong: `{error}`",
+                "⚠️ There was no welcome setup found for this server.",
                 ephemeral=True,
             )
 
+    @disable_welcome.error
+    async def disable_welcome_error(self, ctx: commands.Context, error):
+        if isinstance(error, commands.MissingPermissions):
+            await send_ctx(
+                ctx,
+                "❌ You need `Manage Messages` permission to use this command.",
+                ephemeral=True,
+            )
 
 async def setup(bot):
     await bot.add_cog(CreateWelcome(bot))
