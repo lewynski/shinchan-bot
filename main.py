@@ -12,6 +12,7 @@ MONGO_URI = os.getenv('MONGO_URI')
 # 2. Configure Discord Intents so Shinchan can track messages and roles
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
 # 3. Create the Bot Class
 class ShinchanBot(commands.Bot):
