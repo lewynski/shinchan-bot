@@ -6,14 +6,15 @@ from discord.ext import commands
 
 
 class ClawMachineView(discord.ui.View):
-    def __init__(self, ctx, collection, document_id, cost, cash_emoji):
+    def __init__(self, ctx, collection, document_id, bet, cash_emoji):
         super().__init__(timeout=60)
         self.ctx = ctx
         self.collection = collection
         self.document_id = document_id
-        self.cost = cost
+        self.bet = bet
         self.cash_emoji = cash_emoji
         self.finished = False
+        self.message = None
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.ctx.author.id:
@@ -47,7 +48,7 @@ class ClawMachineView(discord.ui.View):
         await interaction.response.edit_message(
             content=(
                 f"**Retro Arcade Claw**\n"
-                f"Cost: {self.cash_emoji} **{self.cost:,}**\n\n"
+                f"Bet: {self.cash_emoji} **{self.bet:,}**\n\n"
                 f"The claw slides over the glass...\n"
                 f"-# The machine hums like it knows your balance."
             ),
@@ -58,7 +59,7 @@ class ClawMachineView(discord.ui.View):
         await interaction.message.edit(
             content=(
                 f"**Retro Arcade Claw**\n"
-                f"Cost: {self.cash_emoji} **{self.cost:,}**\n\n"
+                f"Bet: {self.cash_emoji} **{self.bet:,}**\n\n"
                 f"**The claw is descending...**\n"
                 f"-# Whirrrrr..."
             ),
@@ -69,7 +70,7 @@ class ClawMachineView(discord.ui.View):
         await interaction.message.edit(
             content=(
                 f"**Retro Arcade Claw**\n"
-                f"Cost: {self.cash_emoji} **{self.cost:,}**\n\n"
+                f"Bet: {self.cash_emoji} **{self.bet:,}**\n\n"
                 f"**It grabbed something. Pulling up...**\n"
                 f"-# Clank. Clank. The arcade holds its breath."
             ),
@@ -95,11 +96,11 @@ class ClawMachineView(discord.ui.View):
             )
             result_text = (
                 f"**The claw slipped.** You pulled up a **{prize}**.\n"
-                f"You lost your {self.cash_emoji} **{self.cost:,}**."
+                f"You lost your {self.cash_emoji} **{self.bet:,}**."
             )
 
         elif result == "common":
-            payout = 500
+            payout = self.bet * 2
             prize = random.choice(
                 [
                     "Cute Plushie",
@@ -108,29 +109,33 @@ class ClawMachineView(discord.ui.View):
                     "Fancy Ribbon",
                 ]
             )
+
             await self.collection.update_one(
                 {"_id": self.document_id},
                 {"$inc": {"coins": payout}},
                 upsert=True,
             )
+
             result_text = (
                 f"**Nice grab.** The chute drops a **{prize}**.\n"
-                f"You won {self.cash_emoji} **{payout:,}**."
+                f"You won {self.cash_emoji} **{self.bet:,}** profit."
             )
 
         else:
-            payout = 5000
+            payout = self.bet * 5
             prize = random.choice(
                 ["Shining Diamond", "Royal Crown", "Legendary Golden Ticket"]
             )
+
             await self.collection.update_one(
                 {"_id": self.document_id},
                 {"$inc": {"coins": payout}},
                 upsert=True,
             )
+
             result_text = (
                 f"**JACKPOT.** The claw locks onto a **{prize}**.\n"
-                f"You won {self.cash_emoji} **{payout:,}**."
+                f"You won {self.cash_emoji} **{self.bet * 4:,}** profit."
             )
 
         await interaction.message.edit(
@@ -150,17 +155,20 @@ class ClawMachineView(discord.ui.View):
         self.finished = True
         self.disable_buttons()
 
+        if not self.message:
+            return
+
         try:
             await self.message.edit(
                 content=(
                     f"**Retro Arcade Claw**\n\n"
                     f"**Timed out.** The machine swallowed your "
-                    f"{self.cash_emoji} **{self.cost:,}** and went quiet.\n"
+                    f"{self.cash_emoji} **{self.bet:,}** and went quiet.\n"
                     f"-# The arcade does not offer refunds."
                 ),
                 view=self,
             )
-        except (AttributeError, discord.HTTPException):
+        except discord.HTTPException:
             pass
 
 
@@ -172,9 +180,17 @@ class ArcadeGame(commands.Cog):
         name="arcade_claw",
         description="Play the retro pixel claw machine.",
     )
-    async def arcade_claw(self, ctx: commands.Context):
+    async def arcade_claw(self, ctx: commands.Context, bet: int):
         cash_emoji = "<a:cash:1506921225484767282>"
-        cost = 100
+
+        if bet <= 0:
+            return await ctx.send("You must bet a valid amount of cash.")
+
+        if bet > 50000:
+            return await ctx.send(
+                f"The claw machine refuses that much. "
+                f"Max bet is {cash_emoji} **50,000**."
+            )
 
         collection = self.bot.db["daily_cooldowns"]
         user_id = int(ctx.author.id)
@@ -186,15 +202,15 @@ class ArcadeGame(commands.Cog):
         coins = user_data.get("coins", 0)
         document_id = user_data.get("_id", user_id)
 
-        if coins < cost:
+        if coins < bet:
             return await ctx.send(
-                f"You need {cash_emoji} **{cost:,}** to play. "
+                f"You need {cash_emoji} **{bet:,}** to play. "
                 f"You only have {cash_emoji} **{coins:,}**."
             )
 
         pay_to_play = await collection.update_one(
-            {"_id": document_id, "coins": {"$gte": cost}},
-            {"$inc": {"coins": -cost}},
+            {"_id": document_id, "coins": {"$gte": bet}},
+            {"$inc": {"coins": -bet}},
         )
 
         if pay_to_play.modified_count == 0:
@@ -202,11 +218,11 @@ class ArcadeGame(commands.Cog):
                 "Your balance changed before the machine could start. Try again."
             )
 
-        view = ClawMachineView(ctx, collection, document_id, cost, cash_emoji)
+        view = ClawMachineView(ctx, collection, document_id, bet, cash_emoji)
 
         view.message = await ctx.send(
             f"**Retro Arcade Claw**\n"
-            f"Cost: {cash_emoji} **{cost:,}**\n\n"
+            f"Bet: {cash_emoji} **{bet:,}**\n\n"
             f"The glass is scratched. The claw is crooked. The prize pit is glowing.\n\n"
             f"-# Press the button and trust the machine exactly as much as it deserves.",
             view=view,
