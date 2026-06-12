@@ -12,12 +12,19 @@ class LeaderboardPagination(discord.ui.View):
         self.phrases = phrases
         self.current_page = 0
         self.per_page = 10
-        self.total_pages = math.ceil(len(top_users) / self.per_page)
+        self.total_pages = math.ceil(len(top_users) / self.per_page) or 1
+        self.update_buttons()
+
+    def update_buttons(self):
+        # Updates the middle button (index 1) to show the current page number
+        self.children[1].label = f"{self.current_page + 1}/{self.total_pages}"
 
     async def generate_embed(self):
-        # 1. Dark red embed setup & Tking emoji in the title
+        guild_name = self.ctx.guild.name if self.ctx.guild else "City"
+        
+        # 1. Dark red embed setup & Tking emoji with Server Name
         embed = discord.Embed(
-            title="<a:tking:1514950042291802143> Hall of Fame",
+            title=f"<a:tking:1514950042291802143> {guild_name} Leaderboard",
             color=discord.Color.dark_red()
         )
         
@@ -37,9 +44,9 @@ class LeaderboardPagination(discord.ui.View):
         }
         crown4 = "<a:crown4:1514950032665870378>" # Applies to ranks 4+
         
-        # Top straight line
-        description = "━━━━━━━━━━━━━━━━━━━━━━\n"
+        description = ""
         
+        # 4. Building the inline user format
         for i, user_data in enumerate(page_users):
             rank = start + i + 1
             user_id = user_data.get("_id")
@@ -63,29 +70,35 @@ class LeaderboardPagination(discord.ui.View):
             
             crown = crowns.get(rank, crown4)
             
-            description += f"{crown} **{rank}. {username}**\n└ {coins:,} 💰\n\n"
+            # Format: 🏆 1. **Username** — 💰 `1,000,000`
+            description += f"{crown} {rank}. **{username}** — 💰 `{coins:,}`\n"
             
-        # Bottom straight line and small random phrase text
-        description += "━━━━━━━━━━━━━━━━━━━━━━\n"
-        description += f"*{random.choice(self.phrases)}*"
+        # 5. Bottom line separator and pagination/phrase text
+        description += f"\n---\n\nPage {self.current_page + 1}/{self.total_pages} • {random.choice(self.phrases)}"
         
         embed.description = description
-        embed.set_footer(text=f"Page {self.current_page + 1} of {self.total_pages}")
         
         return embed
 
-    @discord.ui.button(label="◀", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="◀", style=discord.ButtonStyle.secondary)
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.ctx.author:
             return await interaction.response.send_message("You cannot use these buttons.", ephemeral=True)
         self.current_page = (self.current_page - 1) % self.total_pages
+        self.update_buttons()
         await interaction.response.edit_message(embed=await self.generate_embed(), view=self)
 
-    @discord.ui.button(label="▶", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="1/1", style=discord.ButtonStyle.secondary, disabled=True)
+    async def page_indicator(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # This button is disabled and just used to display the current page (e.g. 1/2)
+        pass
+
+    @discord.ui.button(label="▶", style=discord.ButtonStyle.secondary)
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.ctx.author:
             return await interaction.response.send_message("You cannot use these buttons.", ephemeral=True)
         self.current_page = (self.current_page + 1) % self.total_pages
+        self.update_buttons()
         await interaction.response.edit_message(embed=await self.generate_embed(), view=self)
 
 
@@ -102,7 +115,7 @@ class Leaderboard(commands.Cog):
         try:
             collection = self.bot.db["daily_cooldowns"]
 
-            # Fetching top 100 users instead of 25 to allow for deep pagination
+            # Fetching top 100 users
             top_users = await collection.find(
                 {"coins": {"$gt": 0}}
             ).sort("coins", -1).limit(100).to_list(length=100)
@@ -113,16 +126,16 @@ class Leaderboard(commands.Cog):
                 )
 
             phrases = [
+                "Keep grinding to reach #1.",
                 "Legends in the making.",
                 "The wealthiest in the city.",
                 "Respect the grind.",
                 "The top of the food chain."
             ]
 
-            # Initialize the custom View
             view = LeaderboardPagination(ctx, top_users, self.bot, phrases)
             
-            # If there's only 1 page, there's no need for navigation buttons
+            # Remove buttons if there is only one page
             if view.total_pages <= 1:
                 view.clear_items()
 
