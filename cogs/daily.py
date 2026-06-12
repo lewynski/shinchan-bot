@@ -12,7 +12,7 @@ class Daily(commands.Cog):
 
     @commands.hybrid_command(name="daily", description="Claim your daily rewards.")
     async def daily(self, ctx: commands.Context):
-        coin_emoji = "<:coin:1506921225484767282>"
+        coin_emoji = "<a:cash:1506921225484767282>"
         user_id = int(ctx.author.id)
         current_time = int(time.time())
         cooldown_seconds = 86400
